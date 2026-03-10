@@ -1,0 +1,47 @@
+run:
+  timeout: 5m
+  go: "1.26.1"
+
+linters:
+  enable:
+    - errcheck      # all errors must be handled
+    - govet         # Go vet checks (includes shadow detection)
+    - staticcheck   # static analysis
+    - revive        # Go idiomatic style
+    - gofmt         # formatting compliance
+    - gosec         # basic security scanning
+    - unused        # detect unused code
+    - goimports     # import grouping and formatting
+
+linters-settings:
+  revive:
+    max-open-files: 2048
+    rules:
+      - name: line-length-limit
+        arguments: [120]  # hard limit: 120 characters
+  
+  govet:
+    enable:
+      - shadow      # variable shadowing detection
+  
+  goimports:
+    local-prefixes: github.com/theheadlessengineer/crux
+
+issues:
+  max-issues-per-linter: 50
+  max-same-issues: 10
+  
+  exclude-rules:
+    # Exclude generated files
+    - path: ".*\\.pb\\.go$"
+      linters:
+        - all
+    - path: ".*_gen\\.go$"
+      linters:
+        - all
+
+output:
+  formats:
+    - format: colored-line-number
+  print-issued-lines: true
+  print-linter-name: true
