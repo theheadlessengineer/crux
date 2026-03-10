@@ -1,50 +1,96 @@
+version: "2"
+
 run:
   timeout: 5m
-  go: "1.26.1"
+  go: "1.26"
+  tests: true
+  modules-download-mode: readonly
 
 linters:
   default: none
-  enable:
-    - errcheck      # all errors must be handled
-    - govet         # Go vet checks (includes shadow detection)
-    - staticcheck   # static analysis
-    - revive        # Go idiomatic style
-    - gofmt         # formatting compliance
-    - gosec         # basic security scanning
-    - unused        # detect unused code
-    - goimports     # import grouping and formatting
-  
-  settings:
-    revive:
-      max-open-files: 2048
-      rules:
-        - name: line-length-limit
-          arguments: [120]  # hard limit: 120 characters
-    
-    govet:
-      enable:
-        - shadow      # variable shadowing detection
-    
-    goimports:
-      local-prefixes: github.com/theheadlessengineer/crux
 
-  exclusions:
+  enable:
+    # --- correctness ---
+    - errcheck
+    - govet
+    - staticcheck
+    - ineffassign
+    - unused
+
+    # --- code quality ---
+    - revive
+    - gocritic
+    - cyclop
+    - dupl
+
+    # --- security ---
+    - gosec
+
+    # --- style / formatting ---
+    - gofmt
+    - goimports
+    - misspell
+
+    # --- maintainability ---
+    - unconvert
+    - unparam
+    - prealloc
+
+linters-settings:
+
+  cyclop:
+    max-complexity: 15
+
+  revive:
     rules:
-      # Exclude generated files
-      - path: ".*\\.pb\\.go$"
-        linters:
-          - all
-      - path: ".*_gen\\.go$"
-        linters:
-          - all
+      - name: line-length-limit
+        arguments: [120]
+      - name: var-naming
+      - name: indent-error-flow
+      - name: error-return
+
+  govet:
+    enable:
+      - shadow
+
+  goimports:
+    local-prefixes: github.com/theheadlessengineer/crux
+
+  dupl:
+    threshold: 120
+
+  gocritic:
+    enabled-tags:
+      - diagnostic
+      - performance
+      - style
 
 issues:
+
   max-issues-per-linter: 50
   max-same-issues: 10
+
+  exclude-rules:
+
+    # Generated files
+    - path: ".*\\.pb\\.go"
+      linters:
+        - all
+
+    - path: ".*_gen\\.go"
+      linters:
+        - all
+
+    # Test files often duplicate logic
+    - path: "_test\\.go"
+      linters:
+        - dupl
+        - gosec
 
 output:
   formats:
     colored-line-number:
       path: stdout
+
   print-issued-lines: true
   print-linter-name: true
