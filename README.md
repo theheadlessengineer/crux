@@ -39,3 +39,52 @@ Crux gives every engineering team a single, extensible starting point —
 embedding company standards, security, resilience, and observability
 directly into the foundation of every service, so teams can focus entirely
 on the problems only they can solve.
+
+---
+
+## Development Setup
+
+### Prerequisites
+
+- Go 1.26 or later
+- `golangci-lint` installed and available in PATH
+- Git
+
+### Getting Started
+
+1. Clone the repository:
+   ```bash
+   git clone <repository-url>
+   cd terminal-ms
+   ```
+
+2. Install pre-commit hooks:
+   ```bash
+   make hooks
+   ```
+
+3. Verify your setup:
+   ```bash
+   make dev
+   ```
+
+### Pre-Commit Hooks
+
+Pre-commit hooks enforce code quality standards before commits reach the remote repository. The hooks check:
+
+- **Code formatting** with `gofmt`
+- **Linting** with `golangci-lint`
+- **Test passage** with `go test`
+
+After cloning, run `make hooks` to install the hooks locally. The hooks will automatically run on every commit and block the commit if any check fails.
+
+### Available Make Targets
+
+- `make hooks` — Install pre-commit hooks
+- `make format` — Format code with gofmt
+- `make lint` — Run golangci-lint
+- `make test` — Run all tests with race detector
+- `make build` — Build the crux binary
+- `make dev` — Run format, lint, and test (full development workflow)
+- `make clean` — Remove build artifacts
+- `make help` — Show all available targets

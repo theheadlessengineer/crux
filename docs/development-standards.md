@@ -347,7 +347,7 @@ jobs:
       
       - uses: actions/setup-go@v4
         with:
-          go-version: '1.21'
+          go-version: '1.26'
       
       - name: Format check
         run: test -z "$(gofmt -l .)"
