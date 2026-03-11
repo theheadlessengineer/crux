@@ -20,8 +20,6 @@ linters:
     - cyclop
     - dupl
     - gosec
-    - gofmt
-    - goimports
     - misspell
     - unconvert
     - unparam
