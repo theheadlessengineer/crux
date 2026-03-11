@@ -81,10 +81,12 @@ After cloning, run `make hooks` to install the hooks locally. The hooks will aut
 ### Available Make Targets
 
 - `make hooks` — Install pre-commit hooks
-- `make format` — Format code with gofmt
+- `make fmt` — Format all Go files
 - `make lint` — Run golangci-lint
+- `make vet` — Run go vet
 - `make test` — Run all tests with race detector
-- `make build` — Build the crux binary
-- `make dev` — Run format, lint, and test (full development workflow)
+- `make coverage` — Run tests and open coverage report
+- `make build` — Compile binary to ./bin/crux
 - `make clean` — Remove build artifacts
+- `make dev` — Run format, lint, and test (development workflow)
 - `make help` — Show all available targets

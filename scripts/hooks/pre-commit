@@ -1,0 +1,37 @@
+#!/bin/bash
+# Pre-commit hook for crux
+# Enforces formatting, linting, and test passage before commit
+
+set -e
+
+echo "Running pre-commit checks..."
+
+# Check formatting
+echo "→ Checking code formatting..."
+if [ -n "$(gofmt -l .)" ]; then
+    echo "❌ Code is not formatted. Run: gofmt -w ."
+    echo "Files needing formatting:"
+    gofmt -l .
+    exit 1
+fi
+echo "✓ Code formatting passed"
+
+# Run linter
+echo "→ Running golangci-lint..."
+golangci-lint run
+if [ $? -ne 0 ]; then
+    echo "❌ Linting failed"
+    exit 1
+fi
+echo "✓ Linting passed"
+
+# Run tests
+echo "→ Running tests..."
+go test ./...
+if [ $? -ne 0 ]; then
+    echo "❌ Tests failed"
+    exit 1
+fi
+echo "✓ Tests passed"
+
+echo "✅ All pre-commit checks passed"
