@@ -1,4 +1,4 @@
-.PHONY: help build test lint fmt vet clean hooks coverage dev
+.PHONY: help build test test-integration lint fmt vet clean hooks coverage dev
 
 VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo "dev")
 LDFLAGS := -ldflags "-X main.version=$(VERSION)"
@@ -19,6 +19,11 @@ test: ## Run all tests with race detector
 	@echo "Running tests..."
 	@go test -v -race -coverprofile=coverage.out ./...
 	@echo "✓ Tests passed"
+
+test-integration: ## Run integration tests
+	@echo "Running integration tests..."
+	@go test -v -tags=integration ./...
+	@echo "✓ Integration tests passed"
 
 lint: ## Run golangci-lint
 	@echo "Running linter..."
