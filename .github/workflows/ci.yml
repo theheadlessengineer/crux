@@ -2,46 +2,56 @@ name: CI
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
+    branches: [main]
 
 jobs:
   test:
     runs-on: ubuntu-latest
-    
+
+    strategy:
+      matrix:
+        go-version: ['1.26.x', '1.25.x']
+
     steps:
-    - uses: actions/checkout@v6
-    
-    - name: Set up Go
-      uses: actions/setup-go@v6
-      with:
-        go-version: '1.26.1'
-        cache: true
-    
-    - name: Format check
-      run: |
-        if [ -n "$(gofmt -l .)" ]; then
-          echo "Code is not formatted. Run: gofmt -w ."
-          gofmt -l .
-          exit 1
-        fi
-    
-    - name: Lint
-      uses: golangci/golangci-lint-action@v9
-      with:
-        version: latest
-        args: --timeout=5m
-    
-    - name: Test
-      run: go test -race -coverprofile=coverage.out ./...
-    
-    - name: Build
-      run: go build -v ./...
-    
-    - name: Upload coverage reports
-      uses: actions/upload-artifact@v7
-      with:
-        name: coverage-report
-        path: coverage.out
-        retention-days: 30
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ matrix.go-version }}
+          cache: true
+
+      - name: Verify modules
+        run: go mod verify
+
+      - name: Format check
+        run: |
+          if [ -n "$(gofmt -l .)" ]; then
+            echo "Code is not formatted. Run: gofmt -w ."
+            gofmt -l .
+            exit 1
+          fi
+
+      - name: Vet
+        run: go vet ./...
+
+      - name: Lint
+        uses: golangci/golangci-lint-action@v9
+        with:
+          version: v2.11.3
+          args: --config=.golangci.yml --timeout=5m
+
+      - name: Test
+        run: go test -race -coverprofile=coverage.out ./...
+
+      - name: Build
+        run: go build -v ./...
+
+      - name: Upload coverage
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-${{ matrix.go-version }}
+          path: coverage.out
