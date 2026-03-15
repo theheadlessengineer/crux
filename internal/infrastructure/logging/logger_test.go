@@ -12,6 +12,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 )
 
 func init() { gin.SetMode(gin.TestMode) }
@@ -88,37 +89,45 @@ func TestMiddleware_InjectsTraceFields(t *testing.T) {
 	var buf bytes.Buffer
 	l := New(&buf, "svc", "dev", "0.1.0")
 
+	// Set up a no-op tracer that produces a valid span context with known IDs.
+	tp := sdktrace.NewTracerProvider()
+	tracer := tp.Tracer("test")
+
 	r := gin.New()
+	// Simulate the tracing middleware having already started a span.
+	r.Use(func(c *gin.Context) {
+		ctx, span := tracer.Start(c.Request.Context(), "test-op")
+		defer span.End()
+		c.Request = c.Request.WithContext(ctx)
+		c.Next()
+	})
 	r.Use(Middleware())
 	r.GET("/test", func(c *gin.Context) {
 		l.WithContext(c.Request.Context()).Info("in handler")
 		c.Status(http.StatusOK)
 	})
 
-	req := httptest.NewRequest(http.MethodGet, "/test", http.NoBody)
-	req.Header.Set("X-Trace-Id", "trace-abc")
-	req.Header.Set("X-Span-Id", "span-xyz")
-	r.ServeHTTP(httptest.NewRecorder(), req)
+	r.ServeHTTP(httptest.NewRecorder(), httptest.NewRequest(http.MethodGet, "/test", http.NoBody))
 
 	line := logLine(t, &buf)
-	assert.Equal(t, "trace-abc", line["trace_id"])
-	assert.Equal(t, "span-xyz", line["span_id"])
+	assert.NotEmpty(t, line["trace_id"], "trace_id must be populated from OTel span")
+	assert.NotEmpty(t, line["span_id"], "span_id must be populated from OTel span")
 }
 
-func TestMiddleware_NoHeaders_EmptyStrings(t *testing.T) {
+func TestMiddleware_NoSpan_EmptyStrings(t *testing.T) {
 	var buf bytes.Buffer
 	l := New(&buf, "svc", "dev", "0.1.0")
 
 	r := gin.New()
 	r.Use(Middleware())
 	r.GET("/test", func(c *gin.Context) {
-		l.WithContext(c.Request.Context()).Info("no headers")
+		l.WithContext(c.Request.Context()).Info("no span")
 		c.Status(http.StatusOK)
 	})
 
 	r.ServeHTTP(httptest.NewRecorder(), httptest.NewRequest(http.MethodGet, "/test", http.NoBody))
 
 	line := logLine(t, &buf)
-	assert.Equal(t, "", line["trace_id"])
-	assert.Equal(t, "", line["span_id"])
+	assert.Equal(t, "", line["trace_id"], "trace_id must be empty string when no span is active")
+	assert.Equal(t, "", line["span_id"], "span_id must be empty string when no span is active")
 }

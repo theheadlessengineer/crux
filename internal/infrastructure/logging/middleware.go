@@ -2,18 +2,25 @@ package logging
 
 import (
 	"github.com/gin-gonic/gin"
+	"go.opentelemetry.io/otel/trace"
 )
 
 // Middleware returns a Gin middleware that extracts trace_id and span_id from
-// request headers and stores them in the request context via ContextWithFields.
-// Header names follow the OTel/W3C traceparent convention; US-1103 will wire
-// the actual OTel SDK — this middleware provides the context plumbing now.
+// the active OTel span in the request context and stores them as logging Fields.
+// It must be registered after the tracing.Middleware so the span is already present.
 func Middleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		f := Fields{
-			TraceID: c.GetHeader("X-Trace-Id"),
-			SpanID:  c.GetHeader("X-Span-Id"),
+		span := trace.SpanFromContext(c.Request.Context())
+		sc := span.SpanContext()
+
+		f := Fields{}
+		if sc.HasTraceID() {
+			f.TraceID = sc.TraceID().String()
 		}
+		if sc.HasSpanID() {
+			f.SpanID = sc.SpanID().String()
+		}
+
 		ctx := ContextWithFields(c.Request.Context(), f)
 		c.Request = c.Request.WithContext(ctx)
 		c.Next()
