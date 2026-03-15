@@ -1,0 +1,71 @@
+package shutdown
+
+import (
+	"context"
+	"log/slog"
+	"os"
+	"os/signal"
+	"strconv"
+	"syscall"
+	"time"
+)
+
+// Hook is a function called during shutdown (e.g. srv.Shutdown, db.Close).
+// Hooks are called in registration order within the drain timeout context.
+type Hook func(ctx context.Context) error
+
+// Runner waits for SIGTERM or SIGINT then executes registered hooks in order.
+type Runner struct {
+	hooks   []Hook
+	logger  *slog.Logger
+	timeout time.Duration
+}
+
+// New returns a Runner. The drain timeout is read from SHUTDOWN_TIMEOUT_SECONDS
+// (default: 30). logger must not be nil.
+func New(logger *slog.Logger) *Runner {
+	return &Runner{
+		logger:  logger,
+		timeout: parseDrainTimeout(),
+	}
+}
+
+// Register appends a hook to the shutdown sequence.
+func (r *Runner) Register(h Hook) {
+	r.hooks = append(r.hooks, h)
+}
+
+// ListenAndServe blocks until SIGTERM or SIGINT is received, then runs all
+// registered hooks within the drain timeout.
+// Returns nil on clean shutdown, or the first hook error / context error on failure.
+func (r *Runner) ListenAndServe() error {
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGTERM, syscall.SIGINT)
+	<-quit
+
+	r.logger.Info("shutdown signal received, draining",
+		slog.Duration("timeout", r.timeout),
+	)
+
+	ctx, cancel := context.WithTimeout(context.Background(), r.timeout)
+	defer cancel()
+
+	for _, h := range r.hooks {
+		if err := h(ctx); err != nil {
+			r.logger.Error("shutdown hook failed", slog.Any("error", err))
+			return err
+		}
+	}
+
+	r.logger.Info("shutdown complete")
+	return nil
+}
+
+func parseDrainTimeout() time.Duration {
+	if s := os.Getenv("SHUTDOWN_TIMEOUT_SECONDS"); s != "" {
+		if n, err := strconv.Atoi(s); err == nil && n > 0 {
+			return time.Duration(n) * time.Second
+		}
+	}
+	return 30 * time.Second
+}

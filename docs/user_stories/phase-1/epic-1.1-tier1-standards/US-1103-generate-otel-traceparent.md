@@ -54,7 +54,7 @@ Generate OpenTelemetry SDK initialization, W3C `traceparent` header extraction o
 - [x] Log lines include `trace_id` and `span_id` extracted from the OTel context — `logging.Middleware()` reads from `trace.SpanFromContext`; `TestMiddleware_InjectsTraceFields` and `TestMiddleware_NoSpan_EmptyStrings` pass
 - [x] All outbound HTTP requests carry `traceparent` header — `tracing.Transport` / `NewHTTPClient`; `TestTransport_InjectsTraceparentHeader` passes
 - [x] OTLP exporter endpoint is configurable via `OTEL_EXPORTER_OTLP_ENDPOINT` — read in `tracing.Init()`; defaults to `localhost:4317`
-- [ ] Service shuts down the OTel tracer cleanly on SIGTERM — `tp.Shutdown` is returned from `tracing.Init()` but no signal handler wires it yet (blocked on Epic 1.5 server entrypoint)
+- [ ] Service shuts down the OTel tracer cleanly on SIGTERM — `tp.Shutdown` is returned from `tracing.Init()` but no signal handler wires it yet; blocked on Epic 1.5 server entrypoint wiring `runner.Register(otelShutdown)`
 - [x] Unit tests verify propagation on inbound requests — `TestMiddleware_PropagatesInboundTraceparent`, `TestMiddleware_CreatesRootSpanWithoutTraceparent`
 - [x] Unit tests verify injection on outbound requests — `TestTransport_InjectsTraceparentHeader`, `TestTransport_NoActiveSpan_NoTraceparent`
 
@@ -65,7 +65,7 @@ Generate OpenTelemetry SDK initialization, W3C `traceparent` header extraction o
 - [ ] Code reviewed by at least one other platform engineer
 - [ ] End-to-end trace verified in local Jaeger or Tempo instance
 - [x] `traceparent` header confirmed present on outbound test requests — `TestTransport_InjectsTraceparentHeader` asserts header is non-empty
-- [x] Unit tests pass — `go test -race ./internal/infrastructure/tracing/... ./internal/infrastructure/logging/...` all green
+- [x] Unit tests pass — `go test ./...` all green (4 tracing tests + 5 logging tests)
 - [ ] Story moved to Done in the project tracker
 
 ---

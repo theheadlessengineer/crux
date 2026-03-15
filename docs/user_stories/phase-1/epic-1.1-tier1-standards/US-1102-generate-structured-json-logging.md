@@ -73,15 +73,15 @@ Log level must default to `info` in production and be overridable at runtime via
 
 ## Acceptance Criteria
 
-- [x] Generated service produces JSON-formatted logs on stdout
-- [x] Every log line includes: `timestamp`, `level`, `message`, `service`, `environment`, `version`
-- [x] Requests that carry a trace context produce logs with `trace_id` and `span_id` populated
-- [x] Requests without a trace context produce logs with `trace_id` and `span_id` as empty strings, not null
-- [x] Log level is configurable via `LOG_LEVEL` environment variable
-- [x] No unstructured log calls (`fmt.Println`, `log.Printf`) exist in the generated code
-- [x] Logger is injected via constructor — no global logger variable
-- [x] Unit tests verify the JSON structure of log output
-- [x] Tests verify that `trace_id` and `span_id` are injected when context is present
+- [x] Generated service produces JSON-formatted logs on stdout — `slog.NewJSONHandler` writing to `io.Writer` in `internal/infrastructure/logging/logger.go`
+- [x] Every log line includes: `timestamp`, `level`, `message`, `service`, `environment`, `version` — `New()` attaches `service`, `environment`, `version`; `ReplaceAttr` renames `time` → `timestamp`; verified by `TestLogger_JSONFields`
+- [x] Requests that carry a trace context produce logs with `trace_id` and `span_id` populated — `WithContext()` reads `Fields` from context; `TestLogger_WithContext_TraceFields` passes
+- [x] Requests without a trace context produce logs with `trace_id` and `span_id` as empty strings, not null — `Fields{}` zero value used when no context key present; `TestLogger_WithContext_NoFields_EmptyStrings` passes
+- [x] Log level is configurable via `LOG_LEVEL` environment variable — `parseLevel(os.Getenv("LOG_LEVEL"))` in `New()`; `TestLogger_LogLevel` passes
+- [x] No unstructured log calls (`fmt.Println`, `log.Printf`) exist in the generated code — confirmed by code review of all files under `internal/`
+- [x] Logger is injected via constructor — no global logger variable — `New()` returns `*Logger`; no package-level logger variable exists
+- [x] Unit tests verify the JSON structure of log output — `TestLogger_JSONFields` unmarshals output and asserts all required keys
+- [x] Tests verify that `trace_id` and `span_id` are injected when context is present — `TestLogger_WithContext_TraceFields` and `TestMiddleware_InjectsTraceFields` pass
 
 ---
 

@@ -1,0 +1,28 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ .service.name }}-deny-egress
+  namespace: {{ .service.namespace }}
+spec:
+  podSelector:
+    matchLabels:
+      app: {{ .service.name }}
+  policyTypes:
+    - Egress
+  egress:
+    # DNS is always permitted — required for service discovery.
+    - ports:
+        - port: 53
+          protocol: UDP
+        - port: 53
+          protocol: TCP
+  # TODO: Add explicit egress allow rules for this service's dependencies.
+  # Example — allow egress to an internal database:
+  # egress:
+  #   - to:
+  #       - podSelector:
+  #           matchLabels:
+  #             app: postgres
+  #     ports:
+  #       - port: 5432
+  #         protocol: TCP
