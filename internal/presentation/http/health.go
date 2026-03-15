@@ -1,0 +1,80 @@
+package http
+
+import (
+	"net/http"
+
+	"github.com/gin-gonic/gin"
+	"github.com/theheadlessengineer/crux/internal/domain/health"
+)
+
+// BuildInfo holds version and build metadata injected at build time.
+type BuildInfo struct {
+	Service   string `json:"service"`
+	Version   string `json:"version"`
+	Commit    string `json:"commit"`
+	BuildTime string `json:"buildTime"`
+}
+
+// HealthHandler handles the five standard health endpoints.
+type HealthHandler struct {
+	registry  *health.Registry
+	buildInfo BuildInfo
+}
+
+// NewHealthHandler returns a HealthHandler wired to the given registry and build info.
+func NewHealthHandler(registry *health.Registry, info BuildInfo) *HealthHandler {
+	return &HealthHandler{registry: registry, buildInfo: info}
+}
+
+// RegisterRoutes registers all five health endpoints on the given router group.
+// No authentication middleware must be applied to this group.
+func (h *HealthHandler) RegisterRoutes(rg *gin.RouterGroup) {
+	rg.GET("/health", h.Health)
+	rg.GET("/ready", h.Ready)
+	rg.GET("/live", h.Live)
+	rg.GET("/metrics", h.Metrics)
+	rg.GET("/version", h.Version)
+}
+
+// Health returns the aggregate health status of all registered dependencies.
+func (h *HealthHandler) Health(c *gin.Context) {
+	checks := h.registry.Results()
+	status := health.StatusHealthy
+	for _, s := range checks {
+		if s != health.StatusHealthy {
+			status = s
+			break
+		}
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"status": status,
+		"checks": checks,
+	})
+}
+
+// Ready returns 200 when all dependencies are ready, 503 otherwise.
+func (h *HealthHandler) Ready(c *gin.Context) {
+	checks := h.registry.Results()
+	if h.registry.Ready() {
+		c.JSON(http.StatusOK, gin.H{"status": health.StatusHealthy, "checks": checks})
+		return
+	}
+	c.JSON(http.StatusServiceUnavailable, gin.H{"status": health.StatusUnhealthy, "checks": checks})
+}
+
+// Live returns 200 unconditionally — the process is alive.
+func (h *HealthHandler) Live(c *gin.Context) {
+	c.JSON(http.StatusOK, gin.H{"status": health.StatusHealthy})
+}
+
+// Metrics serves the Prometheus text-format metrics scrape endpoint.
+// The actual promhttp handler is registered separately; this stub satisfies
+// the interface contract until Epic 1.3 wires in the Prometheus registry.
+func (h *HealthHandler) Metrics(c *gin.Context) {
+	c.String(http.StatusOK, "# Prometheus metrics endpoint\n")
+}
+
+// Version returns service name, version, commit SHA, and build timestamp.
+func (h *HealthHandler) Version(c *gin.Context) {
+	c.JSON(http.StatusOK, h.buildInfo)
+}
