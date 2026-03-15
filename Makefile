@@ -1,4 +1,4 @@
-.PHONY: help build test test-integration lint fmt vet clean hooks coverage dev
+.PHONY: help build install test test-integration lint fmt vet clean hooks coverage dev
 
 VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo "dev")
 LDFLAGS := -ldflags "-X main.version=$(VERSION)"
@@ -14,6 +14,11 @@ build: ## Compile binary to ./bin/crux
 	@mkdir -p bin
 	@go build $(LDFLAGS) -o ./bin/crux ./cmd/crux
 	@echo "✓ Build complete: bin/crux"
+
+install: build ## Install crux binary to $(GOPATH)/bin (or ~/go/bin)
+	@echo "Installing crux..."
+	@go install $(LDFLAGS) ./cmd/crux
+	@echo "✓ Installed: $$(go env GOPATH)/bin/crux"
 
 test: ## Run all tests with race detector
 	@echo "Running tests..."

@@ -12,15 +12,12 @@ func ValidateServiceName(name string) error {
 		return fmt.Errorf("service name cannot be empty")
 	}
 
-	if len(name) > 63 {
-		return fmt.Errorf("service name too long (max 63 characters)")
-	}
-
-	matched, _ := regexp.MatchString(`^[a-z][a-z0-9-]*$`, name)
+	// Pattern: ^[a-z][a-z0-9-]{2,62}$ — minimum 3 chars total, maximum 63.
+	matched, _ := regexp.MatchString(`^[a-z][a-z0-9-]{2,62}$`, name)
 	if !matched {
 		return fmt.Errorf(
-			"invalid service name format: must start with lowercase letter " +
-				"and contain only lowercase letters, numbers, and hyphens",
+			"invalid service name format: must start with a lowercase letter, " +
+				"be at least 3 characters, and contain only lowercase letters, numbers, and hyphens",
 		)
 	}
 

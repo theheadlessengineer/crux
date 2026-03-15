@@ -39,7 +39,7 @@ func TestValidateServiceName(t *testing.T) {
 			input: "this-is-a-very-long-service-name-that-exceeds-" +
 				"the-maximum-allowed-length-of-sixty-three-characters",
 			wantErr: true,
-			errMsg:  "service name too long",
+			errMsg:  "invalid service name format",
 		},
 		{
 			name:    "starts with uppercase",
@@ -62,6 +62,12 @@ func TestValidateServiceName(t *testing.T) {
 		{
 			name:    "contains special characters",
 			input:   "payment@service",
+			wantErr: true,
+			errMsg:  "invalid service name format",
+		},
+		{
+			name:    "too short",
+			input:   "ab",
 			wantErr: true,
 			errMsg:  "invalid service name format",
 		},
