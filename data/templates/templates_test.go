@@ -175,3 +175,249 @@ func TestNetworkPolicies_RendersServiceName(t *testing.T) {
 		assert.Contains(t, out, "namespace: payments", "namespace must appear in %s", path)
 	}
 }
+
+// ── Resilience template tests ─────────────────────────────────────────────────
+
+var resilienceData = map[string]any{
+	"service": map[string]any{"name": "payment-service"},
+}
+
+func TestResilienceYAML_ContainsRequiredSections(t *testing.T) {
+	raw, err := os.ReadFile("go-gin/resilience.yaml.tmpl")
+	require.NoError(t, err)
+	tmpl, err := template.New("resilience").Parse(string(raw))
+	require.NoError(t, err)
+	var buf bytes.Buffer
+	require.NoError(t, tmpl.Execute(&buf, resilienceData))
+	out := buf.String()
+
+	for _, section := range []string{"timeout:", "retry:", "circuitBreaker:", "bulkhead:", "mesh_mode:"} {
+		assert.Contains(t, out, section, "resilience.yaml must contain %q", section)
+	}
+	assert.Contains(t, out, "payment-service")
+}
+
+// ── SLO template tests ────────────────────────────────────────────────────────
+
+func TestSLOYAML_ContainsRequiredFields(t *testing.T) {
+	raw, err := os.ReadFile("go-gin/slo.yaml.tmpl")
+	require.NoError(t, err)
+	tmpl, err := template.New("slo").Parse(string(raw))
+	require.NoError(t, err)
+	var buf bytes.Buffer
+	require.NoError(t, tmpl.Execute(&buf, resilienceData))
+	out := buf.String()
+
+	for _, field := range []string{"availability", "latency-p99", "target:", "window:", "error_budget_policy:"} {
+		assert.Contains(t, out, field, "slo.yaml must contain %q", field)
+	}
+}
+
+// ── Alerts template tests ─────────────────────────────────────────────────────
+
+func TestAlertsYAML_ContainsFourGoldenSignals(t *testing.T) {
+	raw, err := os.ReadFile("go-gin/monitoring/alerts.yaml.tmpl")
+	require.NoError(t, err)
+	tmpl, err := template.New("alerts").Parse(string(raw))
+	require.NoError(t, err)
+	var buf bytes.Buffer
+	require.NoError(t, tmpl.Execute(&buf, resilienceData))
+	out := buf.String()
+
+	for _, alert := range []string{"HighErrorRate", "HighP99Latency", "NoTraffic", "HighMemorySaturation"} {
+		assert.Contains(t, out, alert, "alerts.yaml must contain alert %q", alert)
+	}
+	assert.Contains(t, out, "payment-service")
+}
+
+// ── Grafana dashboard template tests ─────────────────────────────────────────
+
+func TestDashboardJSON_ContainsFourPanels(t *testing.T) {
+	raw, err := os.ReadFile("go-gin/monitoring/dashboard.json.tmpl")
+	require.NoError(t, err)
+	tmpl, err := template.New("dashboard").Parse(string(raw))
+	require.NoError(t, err)
+	var buf bytes.Buffer
+	require.NoError(t, tmpl.Execute(&buf, resilienceData))
+	out := buf.String()
+
+	for _, panel := range []string{"Request Rate", "Error Rate", "Latency", "Saturation"} {
+		assert.Contains(t, out, panel, "dashboard.json must contain panel %q", panel)
+	}
+	assert.Contains(t, out, "payment-service")
+}
+
+// ── Compliance stub template tests ────────────────────────────────────────────
+
+var complianceData = map[string]any{
+	"service": map[string]any{
+		"name":        "payment-service",
+		"environment": "production",
+	},
+	"cost": map[string]any{
+		"team":   "payments",
+		"centre": "engineering",
+	},
+}
+
+func TestCostBudgetYAML_ContainsRequiredFields(t *testing.T) {
+	raw, err := os.ReadFile("go-gin/compliance/cost-budget.yaml.tmpl")
+	require.NoError(t, err)
+	tmpl, err := template.New("cost-budget").Parse(string(raw))
+	require.NoError(t, err)
+	var buf bytes.Buffer
+	require.NoError(t, tmpl.Execute(&buf, complianceData))
+	out := buf.String()
+
+	for _, field := range []string{"monthly_budget_usd:", "alert_threshold_percent:", "components:"} {
+		assert.Contains(t, out, field)
+	}
+	assert.Contains(t, out, "payment-service")
+	assert.Contains(t, out, "payments")
+}
+
+func TestDataClassificationYAML_ContainsRequiredFields(t *testing.T) {
+	raw, err := os.ReadFile("go-gin/compliance/data-classification.yaml.tmpl")
+	require.NoError(t, err)
+	tmpl, err := template.New("data-classification").Parse(string(raw))
+	require.NoError(t, err)
+	var buf bytes.Buffer
+	require.NoError(t, tmpl.Execute(&buf, complianceData))
+	out := buf.String()
+
+	assert.Contains(t, out, "fields:")
+	assert.Contains(t, out, "payment-service")
+}
+
+func TestLogRetentionYAML_ContainsAllEnvironments(t *testing.T) {
+	raw, err := os.ReadFile("go-gin/compliance/log-retention.yaml.tmpl")
+	require.NoError(t, err)
+	tmpl, err := template.New("log-retention").Parse(string(raw))
+	require.NoError(t, err)
+	var buf bytes.Buffer
+	require.NoError(t, tmpl.Execute(&buf, complianceData))
+	out := buf.String()
+
+	for _, env := range []string{"production:", "staging:", "development:"} {
+		assert.Contains(t, out, env)
+	}
+	assert.Contains(t, out, "logs_days:")
+}
+
+func TestCatalogEntryYAML_ContainsRequiredFields(t *testing.T) {
+	raw, err := os.ReadFile("go-gin/compliance/catalog-entry.yaml.tmpl")
+	require.NoError(t, err)
+	tmpl, err := template.New("catalog-entry").Parse(string(raw))
+	require.NoError(t, err)
+	var buf bytes.Buffer
+	require.NoError(t, tmpl.Execute(&buf, complianceData))
+	out := buf.String()
+
+	for _, field := range []string{"ownership:", "lifecycle:", "dependencies:", "tags:"} {
+		assert.Contains(t, out, field)
+	}
+	assert.Contains(t, out, "payment-service")
+}
+
+// ── CI workflow template tests ────────────────────────────────────────────────
+
+func TestCIWorkflow_ContainsComplianceSteps(t *testing.T) {
+	raw, err := os.ReadFile("go-gin/github/workflows/ci.yaml.tmpl")
+	require.NoError(t, err)
+	tmpl, err := template.New("ci").Parse(string(raw))
+	require.NoError(t, err)
+	var buf bytes.Buffer
+	require.NoError(t, tmpl.Execute(&buf, resilienceData))
+	out := buf.String()
+
+	assert.Contains(t, out, "Generate SBOM", "CI must include SBOM generation step")
+	assert.Contains(t, out, "Licence scan", "CI must include licence scan step")
+	assert.Contains(t, out, "if: false", "DAST step must be disabled by default")
+	assert.Contains(t, out, "DAST", "DAST slot must be present")
+	assert.Contains(t, out, "pre-commit", "CI must run pre-commit hooks")
+}
+
+// ── Documentation stub template tests ────────────────────────────────────────
+
+var docsData = map[string]any{
+	"service": map[string]any{
+		"name":         "payment-service",
+		"language":     "go",
+		"framework":    "gin",
+		"service_type": "REST API",
+		"namespace":    "payments",
+	},
+	"cost": map[string]any{
+		"team": "payments",
+	},
+	"meta": map[string]any{
+		"generated_at": "2026-03-15T17:00:00Z",
+		"cli_version":  "1.0.0",
+	},
+	"plugins_used": []string{"crux-plugin-kubernetes@2.0.0"},
+}
+
+func TestADR001_ContainsChoices(t *testing.T) {
+	raw, err := os.ReadFile("go-gin/docs/adr/ADR-001-initial-technology-choices.md.tmpl")
+	require.NoError(t, err)
+	tmpl, err := template.New("adr001").Parse(string(raw))
+	require.NoError(t, err)
+	var buf bytes.Buffer
+	require.NoError(t, tmpl.Execute(&buf, docsData))
+	out := buf.String()
+
+	assert.Contains(t, out, "payment-service")
+	assert.Contains(t, out, "go")
+	assert.Contains(t, out, "gin")
+	assert.Contains(t, out, "crux-plugin-kubernetes@2.0.0")
+}
+
+func TestRunbook_ContainsIncidentAndDRSections(t *testing.T) {
+	raw, err := os.ReadFile("go-gin/docs/runbook.md.tmpl")
+	require.NoError(t, err)
+	tmpl, err := template.New("runbook").Parse(string(raw))
+	require.NoError(t, err)
+	var buf bytes.Buffer
+	require.NoError(t, tmpl.Execute(&buf, docsData))
+	out := buf.String()
+
+	assert.Contains(t, out, "Incident Response")
+	assert.Contains(t, out, "Disaster Recovery")
+	assert.Contains(t, out, "payment-service")
+}
+
+func TestTODO_ContainsRequiredPlaceholders(t *testing.T) {
+	raw, err := os.ReadFile("go-gin/docs/TODO.md.tmpl")
+	require.NoError(t, err)
+	tmpl, err := template.New("todo").Parse(string(raw))
+	require.NoError(t, err)
+	var buf bytes.Buffer
+	require.NoError(t, tmpl.Execute(&buf, docsData))
+	out := buf.String()
+
+	required := []string{
+		"cost-budget.yaml", "data-classification.yaml",
+		"catalog-entry.yaml", "slo.yaml", "resilience.yaml",
+	}
+	for _, item := range required {
+		assert.Contains(t, out, item, "TODO.md must reference %q", item)
+	}
+}
+
+func TestEditorconfig_EnforcesUTF8AndLF(t *testing.T) {
+	raw, err := os.ReadFile("go-gin/.editorconfig.tmpl")
+	require.NoError(t, err)
+	content := string(raw)
+	assert.Contains(t, content, "charset = utf-8")
+	assert.Contains(t, content, "end_of_line = lf")
+	assert.Contains(t, content, "indent_style = tab")
+}
+
+func TestCommitlintrc_EnforcesConventionalCommits(t *testing.T) {
+	raw, err := os.ReadFile("go-gin/.commitlintrc.yaml.tmpl")
+	require.NoError(t, err)
+	content := string(raw)
+	assert.Contains(t, content, "config-conventional")
+	assert.Contains(t, content, "feat")
+	assert.Contains(t, content, "fix")
+}

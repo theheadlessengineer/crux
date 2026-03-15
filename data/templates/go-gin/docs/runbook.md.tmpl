@@ -1,0 +1,97 @@
+# Runbook — {{ .service.name }}
+
+**Team:** {{ .cost.team }}
+**On-call:** TODO — add PagerDuty service or rotation name
+**Slack:** TODO — add #team-channel
+**Last reviewed:** TODO — update before go-live
+
+---
+
+## Service Overview
+
+TODO — describe what this service does, its criticality, and its dependencies.
+
+---
+
+## Common Operational Tasks
+
+### Restart the service (graceful rolling restart)
+
+```bash
+kubectl rollout restart deployment/{{ .service.name }} -n {{ .service.namespace }}
+kubectl rollout status deployment/{{ .service.name }} -n {{ .service.namespace }}
+```
+
+### View live logs
+
+```bash
+kubectl logs -f deployment/{{ .service.name }} -n {{ .service.namespace }}
+```
+
+### Check health
+
+```bash
+curl https://<service-url>/health
+curl https://<service-url>/ready
+```
+
+### Roll back to the previous image
+
+```bash
+kubectl rollout undo deployment/{{ .service.name }} -n {{ .service.namespace }}
+```
+
+---
+
+## Incident Response
+
+### Severity definitions
+
+| Severity | Definition | Response time |
+|---|---|---|
+| P1 — Critical | Service down or data loss | Immediate (24/7) |
+| P2 — High | Degraded performance, partial outage | < 30 minutes |
+| P3 — Medium | Non-critical feature broken | < 4 hours |
+| P4 — Low | Cosmetic or minor issue | Next business day |
+
+### Incident response steps
+
+1. **Acknowledge** the alert in PagerDuty.
+2. **Assess** — check `/health`, `/ready`, error rate dashboard, and recent deployments.
+3. **Communicate** — post in #incidents with initial assessment.
+4. **Mitigate** — roll back if a recent deployment is the cause (see above).
+5. **Resolve** — confirm metrics return to normal.
+6. **Post-mortem** — open a post-mortem issue within 24 hours for P1/P2.
+
+---
+
+## Disaster Recovery
+
+### RTO / RPO targets
+
+| Target | Value |
+|---|---|
+| Recovery Time Objective (RTO) | TODO — e.g. 4 hours |
+| Recovery Point Objective (RPO) | TODO — e.g. 1 hour |
+
+### Recovery steps
+
+1. **Database** — restore from the latest RDS automated snapshot.
+   ```bash
+   # TODO: add restore command for your RDS instance
+   ```
+2. **Cache** — Redis is ephemeral; the service will repopulate on restart.
+3. **Kafka** — consumer group offsets are stored in Kafka; replay from the
+   earliest available offset if needed.
+4. **Secrets** — re-fetch from Vault / AWS Secrets Manager; no manual action
+   required if the rotation watcher is running.
+5. **Redeploy** — apply the last known-good image tag.
+
+---
+
+## Escalation Path
+
+1. On-call engineer (PagerDuty)
+2. Team lead
+3. Platform Engineering (#platform-engineering)
+4. Engineering Manager

@@ -1,0 +1,80 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  ci:
+    name: Build · Test · Compliance
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # ── Pre-commit hooks ──────────────────────────────────────────────────
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Run pre-commit hooks (format · lint · vet)
+        run: |
+          go fmt ./...
+          go vet ./...
+          if command -v golangci-lint &>/dev/null; then
+            golangci-lint run ./...
+          fi
+
+      # ── Tests ─────────────────────────────────────────────────────────────
+      - name: Run tests
+        run: go test -race -coverprofile=coverage.out ./...
+
+      - name: Check coverage threshold (80%)
+        run: |
+          COVERAGE=$(go tool cover -func=coverage.out | grep total | awk '{print $3}' | tr -d '%')
+          echo "Coverage: ${COVERAGE}%"
+          awk "BEGIN { if (${COVERAGE} < 80) { print \"Coverage below 80%\"; exit 1 } }"
+
+      # ── Build ─────────────────────────────────────────────────────────────
+      - name: Build binary
+        run: go build -o /tmp/{{ .service.name }} ./cmd/{{ .service.name }}
+
+      # ── SBOM generation ───────────────────────────────────────────────────
+      # Generates a Software Bill of Materials on every build.
+      - name: Install Syft
+        uses: anchore/sbom-action/download-syft@v0
+
+      - name: Generate SBOM
+        uses: anchore/sbom-action@v0
+        with:
+          path: .
+          format: spdx-json
+          output-file: sbom.spdx.json
+          artifact-name: sbom-{{ .service.name }}.spdx.json
+          upload-artifact: true
+          upload-artifact-retention: 30
+
+      # ── Dependency licence scan ───────────────────────────────────────────
+      # Fails the build if GPL or AGPL licensed dependencies are detected.
+      - name: Licence scan
+        run: |
+          go install github.com/google/go-licenses@latest
+          go-licenses check ./... \
+            --disallowed_types=restricted,forbidden \
+            --ignore github.com/theheadlessengineer/crux
+
+      # ── DAST slot ─────────────────────────────────────────────────────────
+      # DISABLED by default. Enable by removing `if: false` and configuring
+      # OWASP ZAP against a running instance of the service.
+      # See: https://www.zaproxy.org/docs/docker/full-scan/
+      - name: DAST scan (OWASP ZAP)
+        if: false  # TODO: enable in a dedicated security pipeline stage
+        uses: zaproxy/action-full-scan@v0.10.0
+        with:
+          target: "http://localhost:8080"
+          # TODO: configure ZAP rules file and authentication

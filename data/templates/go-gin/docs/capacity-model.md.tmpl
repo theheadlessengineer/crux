@@ -1,0 +1,64 @@
+# Capacity Model — {{ .service.name }}
+
+**Team:** {{ .cost.team }}
+**Last reviewed:** TODO — update before go-live
+
+Fill in this template before the production readiness review.
+Incomplete entries block the review sign-off.
+
+---
+
+## Traffic Estimates
+
+| Metric | Value | Basis / Notes |
+|---|---|---|
+| Expected RPS at launch | TODO | |
+| Peak RPS (burst) | TODO | |
+| Max RPS before horizontal scale | TODO | |
+| Expected daily request volume | TODO | |
+
+---
+
+## Resource Sizing
+
+| Resource | Request | Limit | Basis |
+|---|---|---|---|
+| CPU | TODO m | TODO m | Load test result |
+| Memory | TODO Mi | TODO Mi | Load test result |
+
+---
+
+## Connection Pool Sizes
+
+| Pool | Size | Config location |
+|---|---|---|
+| DB connections | TODO | resilience.yaml → bulkhead.maxConcurrentCalls |
+| HTTP client pool | TODO | resilience.yaml |
+
+---
+
+## Storage
+
+| Store | Expected size at launch | Growth per month | Retention |
+|---|---|---|---|
+| Database | TODO | TODO | log-retention.yaml |
+| Object storage (S3) | TODO | TODO | log-retention.yaml |
+
+---
+
+## Scaling Policy
+
+| Trigger | Action |
+|---|---|
+| CPU > 70% for 2 min | Scale out +1 replica |
+| Memory > 80% for 2 min | Scale out +1 replica |
+| RPS > TODO | Scale out +1 replica |
+| All metrics normal for 10 min | Scale in |
+
+---
+
+## Headroom Assumptions
+
+- Horizontal Pod Autoscaler min replicas: TODO
+- Horizontal Pod Autoscaler max replicas: TODO
+- PodDisruptionBudget min available: TODO
