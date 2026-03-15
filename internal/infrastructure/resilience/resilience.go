@@ -23,18 +23,18 @@ type TimeoutConfig struct {
 
 // RetryConfig controls retry behaviour for outbound calls.
 type RetryConfig struct {
-	MaxAttempts     int    `yaml:"maxAttempts"`
-	BackoffType     string `yaml:"backoffType"`     // "exponential" or "fixed"
-	InitialIntervalMS int  `yaml:"initialIntervalMs"`
-	MaxIntervalMS   int    `yaml:"maxIntervalMs"`
+	MaxAttempts       int    `yaml:"maxAttempts"`
+	BackoffType       string `yaml:"backoffType"` // "exponential" or "fixed"
+	InitialIntervalMS int    `yaml:"initialIntervalMs"`
+	MaxIntervalMS     int    `yaml:"maxIntervalMs"`
 }
 
 // CircuitBreakerConfig controls the circuit breaker.
 type CircuitBreakerConfig struct {
-	FailureRateThreshold   float64 `yaml:"failureRateThreshold"`   // percentage 0–100
-	SlowCallRateThreshold  float64 `yaml:"slowCallRateThreshold"`  // percentage 0–100
-	MinimumCallCount       int     `yaml:"minimumCallCount"`
-	OpenStateWaitDurationMS int    `yaml:"openStateWaitDurationMs"`
+	FailureRateThreshold    float64 `yaml:"failureRateThreshold"`  // percentage 0–100
+	SlowCallRateThreshold   float64 `yaml:"slowCallRateThreshold"` // percentage 0–100
+	MinimumCallCount        int     `yaml:"minimumCallCount"`
+	OpenStateWaitDurationMS int     `yaml:"openStateWaitDurationMs"`
 }
 
 // BulkheadConfig limits concurrent calls per downstream.

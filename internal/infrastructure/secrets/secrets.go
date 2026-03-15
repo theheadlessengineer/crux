@@ -11,9 +11,9 @@ import (
 type Backend string
 
 const (
-	BackendVault    Backend = "vault"
-	BackendAWSSM    Backend = "aws-secrets-manager"
-	envBackend              = "SECRETS_BACKEND"
+	BackendVault Backend = "vault"
+	BackendAWSSM Backend = "aws-secrets-manager"
+	envBackend           = "SECRETS_BACKEND"
 )
 
 // ErrMissingSecret is returned when a required secret cannot be found.
