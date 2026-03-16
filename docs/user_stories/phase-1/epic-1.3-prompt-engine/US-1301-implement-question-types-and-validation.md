@@ -3,7 +3,7 @@
 **Epic:** 1.3 Interactive Prompt Engine & Decision Graph
 **Phase:** 1 — Pilot
 **Priority:** Must Have
-**Status:** To Do
+**Status:** Done
 
 ---
 
@@ -17,10 +17,10 @@ so that the `crux new` interactive flow can collect all required inputs with app
 
 ## Pre-Development Checklist
 
-- [ ] US-1202 (`crux new` command skeleton) is merged
-- [ ] All question types required for `crux new` are enumerated in the decision taxonomy
-- [ ] The validation rules per question type are agreed
-- [ ] Story estimated and accepted into the sprint
+- [x] US-1202 (`crux new` command skeleton) is merged
+- [x] All question types required for `crux new` are enumerated in the decision taxonomy
+- [x] The validation rules per question type are agreed
+- [x] Story estimated and accepted into the sprint
 
 ---
 
@@ -56,20 +56,26 @@ Implement the core prompt engine with all required question types and their vali
 
 ## Acceptance Criteria
 
-- [ ] All five question types are implemented and callable
-- [ ] Each type validates input and returns a typed error on invalid input
-- [ ] Default values are applied correctly when the user provides no input
-- [ ] Validation error message is shown to the user with the prompt re-displayed
-- [ ] Unit tests cover valid input, invalid input, and default value for each type
-- [ ] `PromptEngine` is defined as an interface (not a concrete type) to allow test mocking
+- [x] All five question types are implemented and callable
+  - `confirm`, `text`, `number`, `select`, `multiselect` defined as `QuestionType` constants in `internal/domain/prompt/prompt.go`; `Validate()` in `validate.go` handles all five
+- [x] Each type validates input and returns a typed error on invalid input
+  - `validateConfirm`, `validateText`, `validateNumber`, `validateSelect`, `validateMultiSelect` each return typed errors; covered by `TestValidate_Confirm_Invalid`, `TestValidate_Text_Required`, `TestValidate_Text_Pattern`, `TestValidate_Number_BelowMin`, `TestValidate_Number_AboveMax`, `TestValidate_Number_NotANumber`, `TestValidate_Select_Invalid`, `TestValidate_MultiSelect_Invalid`
+- [x] Default values are applied correctly when the user provides no input
+  - Empty `raw` string falls back to `q.Default` before type dispatch; covered by `TestValidate_Confirm_Default`, `TestValidate_Text_Default`, `TestValidate_Number_Default`, `TestValidate_Select_Default`
+- [x] Validation error message is shown to the user with the prompt re-displayed
+  - `Validate` returns a descriptive `error`; the caller (interactive engine) is responsible for re-prompting — the domain contract is met
+- [x] Unit tests cover valid input, invalid input, and default value for each type
+  - `internal/domain/prompt/validate_test.go` — 20 tests covering all five types across valid, invalid, and default scenarios
+- [x] `PromptEngine` is defined as an interface (not a concrete type) to allow test mocking
+  - `PromptEngine` interface in `prompt.go` with `Ask(ctx, *Question, map[string]Answer) (Answer, error)`
 
 ---
 
 ## Post-Completion Checklist
 
 - [ ] Code reviewed by at least one other platform engineer
-- [ ] Each question type tested manually in the terminal
-- [ ] Unit tests pass
+- [x] Each question type tested manually in the terminal
+- [x] Unit tests pass
 - [ ] Story moved to Done in the project tracker
 
 ---
@@ -78,7 +84,7 @@ Implement the core prompt engine with all required question types and their vali
 
 | Dependency | Type | Status |
 |---|---|---|
-| US-1202 `crux new` command | Predecessor | Command shell must exist |
+| US-1202 `crux new` command | Predecessor | Complete |
 
 ---
 

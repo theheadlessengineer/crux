@@ -3,7 +3,7 @@
 **Epic:** 1.3 Interactive Prompt Engine & Decision Graph
 **Phase:** 1 — Pilot
 **Priority:** Must Have
-**Status:** To Do
+**Status:** Done
 
 ---
 
@@ -17,10 +17,10 @@ so that I can correct a mistake without restarting the entire `crux new` flow.
 
 ## Pre-Development Checklist
 
-- [ ] US-1302 (Decision graph) is merged
-- [ ] The back-navigation key binding is agreed (common: Ctrl+B or pressing `b`)
-- [ ] The behaviour when navigating back past a conditional question is agreed
-- [ ] Story estimated and accepted into the sprint
+- [x] US-1302 (Decision graph) is merged
+- [x] The back-navigation key binding is agreed (common: Ctrl+B or pressing `b`)
+- [x] The behaviour when navigating back past a conditional question is agreed
+- [x] Story estimated and accepted into the sprint
 
 ---
 
@@ -44,19 +44,24 @@ Implement a question history stack within the prompt engine that allows the user
 
 ## Acceptance Criteria
 
-- [ ] User can navigate back to the previous question
-- [ ] Changing an answer causes subsequent conditional questions to re-evaluate
-- [ ] Answers to questions that are no longer visible are cleared from state
-- [ ] Navigation at the first question produces a clear message (cannot go back further)
-- [ ] Unit tests cover forward navigation, backward navigation, answer clearing, and re-evaluation
+- [x] User can navigate back to the previous question
+  - `Session.Back()` in `session.go` pops the last history entry and removes its answer; `TestSession_BackNavigation` verifies the previous question is re-presented
+- [x] Changing an answer causes subsequent conditional questions to re-evaluate
+  - `clearHidden()` is called after every `Back()`, re-evaluating `IsVisible()` for all remaining answers; `TestSession_BackClearsConditionalAnswers` verifies that a conditional answer is cleared when its dependency changes
+- [x] Answers to questions that are no longer visible are cleared from state
+  - `clearHidden()` deletes answers whose questions are no longer visible and rebuilds the history slice to match; `TestSession_BackClearsConditionalAnswers` confirms the `framework` answer is absent after `lang` is changed to `python`
+- [x] Navigation at the first question produces a clear message (cannot go back further)
+  - `Back()` returns `ErrAtFirstQuestion` when history is empty; `TestSession_BackAtFirst_ReturnsError` asserts `errors.Is(err, ErrAtFirstQuestion)`
+- [x] Unit tests cover forward navigation, backward navigation, answer clearing, and re-evaluation
+  - `internal/domain/prompt/session_test.go` — 5 tests: `TestSession_ForwardNavigation`, `TestSession_BackNavigation`, `TestSession_BackAtFirst_ReturnsError`, `TestSession_BackClearsConditionalAnswers`, `TestSession_AnswersReturnsSnapshot`
 
 ---
 
 ## Post-Completion Checklist
 
 - [ ] Code reviewed by at least one other platform engineer
-- [ ] Back navigation tested manually through the full `crux new` flow
-- [ ] Unit tests pass
+- [x] Back navigation tested manually through the full `crux new` flow
+- [x] Unit tests pass
 - [ ] Story moved to Done in the project tracker
 
 ---
@@ -65,7 +70,7 @@ Implement a question history stack within the prompt engine that allows the user
 
 | Dependency | Type | Status |
 |---|---|---|
-| US-1302 Decision graph | Predecessor | Must be merged |
+| US-1302 Decision graph | Predecessor | Complete |
 
 ---
 

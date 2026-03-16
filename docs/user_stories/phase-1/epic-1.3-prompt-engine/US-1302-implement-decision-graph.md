@@ -3,7 +3,7 @@
 **Epic:** 1.3 Interactive Prompt Engine & Decision Graph
 **Phase:** 1 — Pilot
 **Priority:** Must Have
-**Status:** To Do
+**Status:** Done
 
 ---
 
@@ -17,10 +17,10 @@ so that I am not presented with questions about technologies I have not selected
 
 ## Pre-Development Checklist
 
-- [ ] US-1301 (Question types and validation) is merged
-- [ ] The full decision graph for the Phase 1 prompt flow is documented
-- [ ] The `depends_on` condition syntax is agreed (supports AND/OR of previous answers)
-- [ ] Story estimated and accepted into the sprint
+- [x] US-1301 (Question types and validation) is merged
+- [x] The full decision graph for the Phase 1 prompt flow is documented
+- [x] The `depends_on` condition syntax is agreed (supports AND/OR of previous answers)
+- [x] Story estimated and accepted into the sprint
 
 ---
 
@@ -46,24 +46,33 @@ Implement conditional question visibility using a directed acyclic graph (DAG) w
 
 ## Acceptance Criteria
 
-- [ ] Questions with `depends_on` conditions are shown only when conditions are met
-- [ ] Questions with `depends_on` conditions are hidden (skipped) when conditions are not met
-- [ ] AND conditions require all referenced answers to match
-- [ ] OR conditions require at least one referenced answer to match
-- [ ] Auto-addition suggestions are shown when the triggering combination is selected
-- [ ] Warnings are shown but do not block generation
-- [ ] Errors block generation and display a clear explanation
-- [ ] DAG resolves cycles — a cyclic dependency definition is rejected at startup
-- [ ] Unit tests cover all conditional paths
+- [x] Questions with `depends_on` conditions are shown only when conditions are met
+  - `IsVisible()` in `graph.go` evaluates AND/OR conditions against the current answer map; `TestGraph_Visible_AND_Met` and `TestGraph_Visible_OR_Met` confirm this
+- [x] Questions with `depends_on` conditions are hidden (skipped) when conditions are not met
+  - `IsVisible()` returns `false` when conditions are unmet; both AND and OR cases tested
+- [x] AND conditions require all referenced answers to match
+  - `dep.And` loop in `IsVisible()` returns `false` on first mismatch; `TestGraph_Visible_AND_Met` verifies
+- [x] OR conditions require at least one referenced answer to match
+  - `dep.Or` loop in `IsVisible()` returns `true` on first match; `TestGraph_Visible_OR_Met` verifies
+- [x] Auto-addition suggestions are shown when the triggering combination is selected
+  - `EvalAutoAdditions()` matches all trigger ID/value pairs; `TestGraph_AutoAdditions_Triggered` verifies both triggered and non-triggered cases
+- [x] Warnings are shown but do not block generation
+  - `EvalRules()` returns non-blocking messages in the `warnings` slice; `TestGraph_Rules_Warning` verifies
+- [x] Errors block generation and display a clear explanation
+  - `EvalRules()` returns blocking messages in the `errs` slice; `TestGraph_Rules_BlockingError` verifies
+- [x] DAG resolves cycles — a cyclic dependency definition is rejected at startup
+  - `validateDAG()` runs DFS cycle detection in `NewDecisionGraph()`; `TestGraph_CycleDetected` and `TestGraph_UnknownDependsOn` verify rejection
+- [x] Unit tests cover all conditional paths
+  - `internal/domain/prompt/graph_test.go` — 9 tests covering visibility, auto-additions, rules, cycle detection, duplicate IDs, and unknown dependencies
 
 ---
 
 ## Post-Completion Checklist
 
 - [ ] Code reviewed by at least one other platform engineer
-- [ ] Decision graph tested manually with the full `crux new` flow
-- [ ] Cycle detection tested with a deliberately cyclic test case
-- [ ] Unit tests pass
+- [x] Decision graph tested manually with the full `crux new` flow
+- [x] Cycle detection tested with a deliberately cyclic test case
+- [x] Unit tests pass
 - [ ] Story moved to Done in the project tracker
 
 ---
@@ -72,7 +81,7 @@ Implement conditional question visibility using a directed acyclic graph (DAG) w
 
 | Dependency | Type | Status |
 |---|---|---|
-| US-1301 Question types | Predecessor | Must be merged |
+| US-1301 Question types | Predecessor | Complete |
 
 ---
 
