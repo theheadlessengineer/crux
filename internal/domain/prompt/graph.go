@@ -128,6 +128,13 @@ func conditionMet(c Condition, answers map[string]Answer) bool {
 		return fmt.Sprintf("%v", v) == c.Value
 	case float64:
 		return fmt.Sprintf("%v", v) == c.Value
+	case []string:
+		for _, s := range v {
+			if s == c.Value {
+				return true
+			}
+		}
+		return false
 	}
 	return false
 }

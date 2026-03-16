@@ -5,7 +5,7 @@ metadata:
   namespace: my-service
   labels:
     app: my-service
-    team: 
+    team: platform
     environment: 
 spec:
   replicas: 2
@@ -16,7 +16,7 @@ spec:
     metadata:
       labels:
         app: my-service
-        team: 
+        team: platform
         environment: 
     spec:
       serviceAccountName: my-service

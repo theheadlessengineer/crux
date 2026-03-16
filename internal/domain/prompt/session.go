@@ -45,7 +45,23 @@ func (s *Session) NextQuestion() *Question {
 	return nil
 }
 
-// Record stores an answer and pushes it onto the history stack.
+// Progress returns (answered, total) counts of currently visible questions.
+func (s *Session) Progress() (answered, total int) {
+	for i := range s.graph.questions {
+		q := &s.graph.questions[i]
+		if !s.graph.IsVisible(q, s.answers) {
+			continue
+		}
+		total++
+		if _, ok := s.answers[q.ID]; ok {
+			answered++
+		}
+	}
+	return
+}
+
+// Graph returns the underlying DecisionGraph (read-only access for rendering).
+func (s *Session) Graph() *DecisionGraph { return s.graph }
 func (s *Session) Record(q *Question, a Answer) {
 	s.answers[q.ID] = a
 	s.history = append(s.history, historyEntry{question: q, answer: a})

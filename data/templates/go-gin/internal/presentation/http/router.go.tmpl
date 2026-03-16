@@ -47,8 +47,6 @@ func NewRouter(cfg RouterConfig) *gin.Engine {
 
 	// Health endpoints — no auth, no rate limiting.
 	healthHandler := NewHealthHandler(cfg.Registry, cfg.BuildInfo)
-	healthHandler.RegisterRoutes(&gin.RouterGroup{})
-
 	base := r.Group("")
 	healthHandler.RegisterRoutes(base)
 

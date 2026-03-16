@@ -57,13 +57,19 @@ func Generate(ctx context.Context, cfg *Config, outputDir string) error {
 func fileMap(serviceName string) map[string]string {
 	return map[string]string{
 		// Application
-		"go-gin/cmd/main.go.tmpl":                               "cmd/" + serviceName + "/main.go",
-		"go-gin/internal/config/config.go.tmpl":                 "internal/config/config.go",
-		"go-gin/internal/presentation/http/router.go.tmpl":      "internal/presentation/http/router.go",
-		"go-gin/internal/presentation/http/health.go.tmpl":      "internal/presentation/http/health.go",
-		"go-gin/internal/presentation/http/server.go.tmpl":      "internal/presentation/http/server.go",
-		"go-gin/internal/infrastructure/logging/logger.go.tmpl": "internal/infrastructure/logging/logger.go",
-		"go-gin/internal/infrastructure/errors/handler.go.tmpl": "internal/infrastructure/errors/handler.go",
+		"go-gin/cmd/main.go.tmpl":                                   "cmd/" + serviceName + "/main.go",
+		"go-gin/internal/config/config.go.tmpl":                     "internal/config/config.go",
+		"go-gin/internal/domain/health/registry.go.tmpl":            "internal/domain/health/registry.go",
+		"go-gin/internal/presentation/http/router.go.tmpl":          "internal/presentation/http/router.go",
+		"go-gin/internal/presentation/http/health.go.tmpl":          "internal/presentation/http/health.go",
+		"go-gin/internal/presentation/http/server.go.tmpl":          "internal/presentation/http/server.go",
+		"go-gin/internal/infrastructure/logging/logger.go.tmpl":     "internal/infrastructure/logging/logger.go",
+		"go-gin/internal/infrastructure/logging/middleware.go.tmpl": "internal/infrastructure/logging/middleware.go",
+		"go-gin/internal/infrastructure/errors/handler.go.tmpl":     "internal/infrastructure/errors/handler.go",
+		"go-gin/internal/infrastructure/tracing/provider.go.tmpl":   "internal/infrastructure/tracing/provider.go",
+		"go-gin/internal/infrastructure/tracing/middleware.go.tmpl": "internal/infrastructure/tracing/middleware.go",
+		"go-gin/internal/infrastructure/tracing/httpclient.go.tmpl": "internal/infrastructure/tracing/httpclient.go",
+		"go-gin/internal/infrastructure/shutdown/shutdown.go.tmpl":  "internal/infrastructure/shutdown/shutdown.go",
 		// Root files
 		"go-gin/go.mod.tmpl":             "go.mod",
 		"go-gin/Makefile.tmpl":           "Makefile",

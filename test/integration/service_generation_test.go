@@ -35,9 +35,24 @@ func TestServiceGeneration_CompleteSkeleton(t *testing.T) {
 
 	require.NoError(t, generator.Generate(context.Background(), &cfg, outDir))
 
-	// Verify required files exist.
+	// Verify required files exist — all Tier 1 standards must be present.
 	required := []string{
+		// Application entrypoint
 		"cmd/test-service/main.go",
+		// Core packages required for compilation
+		"internal/domain/health/registry.go",
+		"internal/infrastructure/tracing/provider.go",
+		"internal/infrastructure/tracing/middleware.go",
+		"internal/infrastructure/tracing/httpclient.go",
+		"internal/infrastructure/shutdown/shutdown.go",
+		"internal/infrastructure/logging/logger.go",
+		"internal/infrastructure/logging/middleware.go",
+		"internal/infrastructure/errors/handler.go",
+		"internal/presentation/http/router.go",
+		"internal/presentation/http/health.go",
+		"internal/presentation/http/server.go",
+		"internal/config/config.go",
+		// Root files
 		"go.mod",
 		"Makefile",
 		"Dockerfile",
@@ -46,10 +61,24 @@ func TestServiceGeneration_CompleteSkeleton(t *testing.T) {
 		".envrc",
 		"resilience.yaml",
 		"slo.yaml",
+		// Docs
 		"docs/runbook.md",
 		"docs/capacity-model.md",
+		"docs/TODO.md",
+		// Infrastructure
 		"infra/kubernetes/deployment.yaml",
+		"infra/kubernetes/networkpolicy-ingress.yaml",
+		"infra/kubernetes/networkpolicy-egress.yaml",
 		"infra/monitoring/alerts.yaml",
+		"infra/monitoring/dashboard.json",
+		// Compliance
+		"compliance/catalog-entry.yaml",
+		"compliance/cost-budget.yaml",
+		"compliance/data-classification.yaml",
+		"compliance/log-retention.yaml",
+		// CI
+		".github/workflows/ci.yaml",
+		// Scripts
 		"scripts/seed.sh",
 		"scripts/check_env.sh",
 	}

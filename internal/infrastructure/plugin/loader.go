@@ -4,6 +4,7 @@ package plugin
 import (
 	"context"
 	"fmt"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -31,6 +32,49 @@ type loader struct {
 // Pass nil embeddedDirs to skip the embedded search path.
 func New(embeddedDirs []string) domain.Loader {
 	return &loader{embeddedDirs: embeddedDirs}
+}
+
+// LoadFromFS loads all plugins from an embed.FS (or any fs.FS).
+// Each top-level directory that contains a plugin.yaml is treated as a plugin.
+func LoadFromFS(fsys fs.FS, cruxVersion string) ([]*domain.Plugin, error) {
+	entries, err := fs.ReadDir(fsys, ".")
+	if err != nil {
+		return nil, fmt.Errorf("read plugin fs: %w", err)
+	}
+	var plugins []*domain.Plugin
+	for _, e := range entries {
+		if !e.IsDir() {
+			continue
+		}
+		data, err := fs.ReadFile(fsys, e.Name()+"/"+manifestFile)
+		if err != nil {
+			continue // no plugin.yaml — skip
+		}
+		var m domain.Manifest
+		if err := yaml.Unmarshal(data, &m); err != nil {
+			return nil, fmt.Errorf("parse manifest %s: %w", e.Name(), err)
+		}
+		if err := ValidateManifest(&m); err != nil {
+			return nil, fmt.Errorf("invalid manifest %s: %w", e.Name(), err)
+		}
+		if err := checkCompatibility(m.Metadata.CruxVersionConstraint, cruxVersion); err != nil {
+			return nil, fmt.Errorf("plugin %s: %w", e.Name(), err)
+		}
+		plugins = append(plugins, &domain.Plugin{Manifest: &m})
+	}
+	// Also load user-installed plugins from ~/.crux/plugins/
+	if home, err := os.UserHomeDir(); err == nil {
+		userDir := filepath.Join(home, pluginsDir)
+		if found, err := findPluginDirs(userDir); err == nil {
+			for _, dir := range found {
+				p, err := loadOne(dir, cruxVersion)
+				if err == nil {
+					plugins = append(plugins, p)
+				}
+			}
+		}
+	}
+	return plugins, nil
 }
 
 // Load discovers, parses, validates, and returns all plugins.
@@ -168,8 +212,13 @@ func RunPostGenerate(ctx context.Context, p *domain.Plugin, hctx *domain.HookCon
 // checkCompatibility verifies that cruxVersion satisfies the constraint string.
 // Supported operators: >=, >, <=, <, = (and bare version implies =).
 // Multiple constraints separated by space are ANDed.
+// "dev" or any non-semver version (e.g. git hash) bypasses all version checks.
 func checkCompatibility(constraint, cruxVersion string) error {
 	if constraint == "" {
+		return nil
+	}
+	// Bypass for dev builds and non-semver versions (git hashes, dirty tags).
+	if !semverRE.MatchString(strings.TrimPrefix(cruxVersion, "v")) {
 		return nil
 	}
 	parts := strings.Fields(constraint)

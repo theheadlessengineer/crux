@@ -8,7 +8,7 @@
 #   - Set the lifecycle stage correctly.
 
 service: my-service
-team: 
+team: platform
 description: "TODO: describe what this service does in one sentence."
 
 ownership:

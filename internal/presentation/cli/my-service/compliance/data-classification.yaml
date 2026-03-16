@@ -12,7 +12,7 @@
 #   - Review with your Data Protection Officer if handling PHI.
 
 service: my-service
-team: 
+team: platform
 
 fields: []
 # Example — uncomment and adapt:

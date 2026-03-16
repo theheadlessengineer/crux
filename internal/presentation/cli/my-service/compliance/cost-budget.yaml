@@ -8,7 +8,7 @@
 #   - Set alert_threshold_percent (default: 80 = alert at 80% of budget).
 
 service: my-service
-team: 
+team: platform
 environment: 
 cost_centre: engineering
 

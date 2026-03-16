@@ -27,6 +27,7 @@ type QuestionSpec struct {
 	ID      string   `yaml:"id"`
 	Type    string   `yaml:"type"`
 	Prompt  string   `yaml:"prompt"`
+	Help    string   `yaml:"help,omitempty"`
 	Options []string `yaml:"options,omitempty"`
 	Default string   `yaml:"default,omitempty"`
 }

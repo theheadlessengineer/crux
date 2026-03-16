@@ -1,6 +1,6 @@
 # Capacity Model — my-service
 
-**Team:** 
+**Team:** platform
 **Last reviewed:** TODO — update before go-live
 
 Fill in this template before the production readiness review.

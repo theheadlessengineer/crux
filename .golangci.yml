@@ -68,6 +68,12 @@ linters:
         linters:
           - dupl
           - gosec
+          - gocritic
+
+      # Bubbletea requires value receivers on Init/Update/View — hugeParam is unavoidable.
+      - path: "internal/presentation/tui/model\\.go"
+        linters:
+          - gocritic
 
 issues:
   max-issues-per-linter: 50

@@ -1,6 +1,6 @@
 # Runbook — my-service
 
-**Team:** 
+**Team:** platform
 **On-call:** TODO — add PagerDuty service or rotation name
 **Slack:** TODO — add #team-channel
 **Last reviewed:** TODO — update before go-live
