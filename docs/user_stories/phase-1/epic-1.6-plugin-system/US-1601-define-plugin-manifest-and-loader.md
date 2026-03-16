@@ -3,7 +3,7 @@
 **Epic:** 1.6 Plugin System — Core Infrastructure
 **Phase:** 1 — Pilot
 **Priority:** Must Have
-**Status:** To Do
+**Status:** Done
 
 ---
 
@@ -17,11 +17,11 @@ so that the core system can discover and initialize plugins in a consistent, saf
 
 ## Pre-Development Checklist
 
-- [ ] The plugin manifest schema is agreed (`plugin.yaml` fields and types)
-- [ ] The plugin trust tier model is agreed (Tier 1 = official, Tier 2 = inner source, Tier 3 = community)
-- [ ] The plugin isolation strategy is agreed (in-process with interface constraints at MVP)
+- [x] The plugin manifest schema is agreed (`plugin.yaml` fields and types)
+- [x] The plugin trust tier model is agreed (Tier 1 = official, Tier 2 = inner source, Tier 3 = community)
+- [x] The plugin isolation strategy is agreed (in-process with interface constraints at MVP)
 - [ ] Epic 1.4 Template Engine is merged
-- [ ] Story estimated and accepted into the sprint
+- [x] Story estimated and accepted into the sprint
 
 ---
 
@@ -75,13 +75,13 @@ spec:
 
 ## Acceptance Criteria
 
-- [ ] Valid `plugin.yaml` files are parsed without error
-- [ ] Invalid `plugin.yaml` files (missing required fields, bad version format) are rejected with clear errors
-- [ ] Plugins incompatible with the running Crux version are rejected at startup
-- [ ] `preGenerate` hooks execute before template rendering
-- [ ] `postGenerate` hooks execute after template rendering
-- [ ] Unit tests cover valid plugin, invalid plugin, incompatible version, and hook execution
-- [ ] Plugin discovery searches both embedded directory and `~/.crux/plugins/`
+- [x] Valid `plugin.yaml` files are parsed without error
+- [x] Invalid `plugin.yaml` files (missing required fields, bad version format) are rejected with clear errors
+- [x] Plugins incompatible with the running Crux version are rejected at startup
+- [x] `preGenerate` hooks execute before template rendering
+- [x] `postGenerate` hooks execute after template rendering
+- [x] Unit tests cover valid plugin, invalid plugin, incompatible version, and hook execution
+- [x] Plugin discovery searches both embedded directory and `~/.crux/plugins/`
 
 ---
 
@@ -90,8 +90,8 @@ spec:
 - [ ] Code reviewed by at least one other platform engineer
 - [ ] A test plugin loaded successfully and hooks verified
 - [ ] An invalid plugin correctly rejected
-- [ ] Unit tests pass
-- [ ] Plugin isolation strategy documented in an ADR
+- [x] Unit tests pass
+- [x] Plugin isolation strategy documented in an ADR
 - [ ] Story moved to Done in the project tracker
 
 ---
