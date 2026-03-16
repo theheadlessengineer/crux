@@ -421,3 +421,165 @@ func TestCommitlintrc_EnforcesConventionalCommits(t *testing.T) {
 	assert.Contains(t, content, "feat")
 	assert.Contains(t, content, "fix")
 }
+
+// ── Application code template tests ──────────────────────────────────────────
+
+var appData = map[string]any{
+	"service": map[string]any{
+		"name":      "payment-service",
+		"module":    "github.com/example/payment-service",
+		"namespace": "payments",
+	},
+	"cost": map[string]any{
+		"team": "payments",
+	},
+	"meta": map[string]any{
+		"cli_version":  "1.0.0",
+		"generated_at": "2026-03-16T10:00:00Z",
+	},
+	"plugins_used": []string{"crux-plugin-kubernetes@2.0.0"},
+}
+
+func renderApp(t *testing.T, path string) string {
+	t.Helper()
+	raw, err := os.ReadFile(path)
+	require.NoError(t, err, "%s must exist", path)
+	tmpl, err := template.New(path).Parse(string(raw))
+	require.NoError(t, err, "%s must be valid Go template syntax", path)
+	var buf bytes.Buffer
+	require.NoError(t, tmpl.Execute(&buf, appData))
+	return buf.String()
+}
+
+func TestMainGo_RendersServiceName(t *testing.T) {
+	out := renderApp(t, "go-gin/cmd/main.go.tmpl")
+	assert.Contains(t, out, "payment-service")
+	assert.Contains(t, out, "package main")
+}
+
+func TestMainGo_WiresAllTier1Components(t *testing.T) {
+	out := renderApp(t, "go-gin/cmd/main.go.tmpl")
+	assert.Contains(t, out, "logging.New", "must wire structured logger")
+	assert.Contains(t, out, "tracing.Init", "must wire OTel tracing")
+	assert.Contains(t, out, "shutdown.New", "must wire graceful shutdown")
+	assert.Contains(t, out, "infrahttp.NewRouter", "must wire router")
+	assert.Contains(t, out, "runner.ListenAndServe", "must block on shutdown runner")
+}
+
+func TestMainGo_GracefulShutdownRegistersHTTPAndTracing(t *testing.T) {
+	out := renderApp(t, "go-gin/cmd/main.go.tmpl")
+	assert.Contains(t, out, "srv.Shutdown", "HTTP server shutdown must be registered")
+	assert.Contains(t, out, "shutdownTracing", "tracing shutdown must be registered")
+}
+
+func TestGoMod_ContainsModuleName(t *testing.T) {
+	out := renderApp(t, "go-gin/go.mod.tmpl")
+	assert.Contains(t, out, "module github.com/example/payment-service")
+	assert.Contains(t, out, "go 1.26")
+	assert.Contains(t, out, "github.com/gin-gonic/gin")
+}
+
+func TestConfigGo_RendersServiceName(t *testing.T) {
+	out := renderApp(t, "go-gin/internal/config/config.go.tmpl")
+	assert.Contains(t, out, "payment-service")
+	assert.Contains(t, out, "package config")
+}
+
+func TestConfigGo_HasRequiredFields(t *testing.T) {
+	out := renderApp(t, "go-gin/internal/config/config.go.tmpl")
+	for _, field := range []string{"ServiceName", "Environment", "Port", "LogLevel", "OTLPEndpoint"} {
+		assert.Contains(t, out, field, "config must have field %q", field)
+	}
+}
+
+func TestLoggerGo_IsValidGoSyntax(t *testing.T) {
+	out := renderApp(t, "go-gin/internal/infrastructure/logging/logger.go.tmpl")
+	assert.Contains(t, out, "package logging")
+	assert.Contains(t, out, "slog.NewJSONHandler")
+	assert.Contains(t, out, "timestamp", "must rename slog time key to timestamp")
+}
+
+func TestErrorsHandlerGo_RFC7807Shape(t *testing.T) {
+	out := renderApp(t, "go-gin/internal/infrastructure/errors/handler.go.tmpl")
+	assert.Contains(t, out, "application/problem+json")
+	assert.Contains(t, out, "type Problem struct")
+	assert.Contains(t, out, "TraceID")
+}
+
+func TestErrorsHandlerGo_HasStandardHelpers(t *testing.T) {
+	out := renderApp(t, "go-gin/internal/infrastructure/errors/handler.go.tmpl")
+	for _, fn := range []string{"NotFound", "ValidationError", "Unauthorized", "InternalError", "Middleware"} {
+		assert.Contains(t, out, fn, "errors handler must export %q", fn)
+	}
+}
+
+func TestHealthGo_FiveEndpoints(t *testing.T) {
+	out := renderApp(t, "go-gin/internal/presentation/http/health.go.tmpl")
+	for _, ep := range []string{"/health", "/ready", "/live", "/metrics", "/version"} {
+		assert.Contains(t, out, ep, "health handler must register %q", ep)
+	}
+}
+
+func TestHealthGo_RendersModulePath(t *testing.T) {
+	out := renderApp(t, "go-gin/internal/presentation/http/health.go.tmpl")
+	assert.Contains(t, out, "github.com/example/payment-service")
+}
+
+func TestRouterGo_AllTier1MiddlewarePresent(t *testing.T) {
+	out := renderApp(t, "go-gin/internal/presentation/http/router.go.tmpl")
+	assert.Contains(t, out, "securityHeaders", "router must apply security headers")
+	assert.Contains(t, out, "corsMiddleware", "router must apply CORS middleware")
+	assert.Contains(t, out, "inputSanitization", "router must apply input sanitization")
+	assert.Contains(t, out, "tracing.Middleware", "router must apply tracing middleware")
+	assert.Contains(t, out, "logging.Middleware", "router must apply logging middleware")
+	assert.Contains(t, out, "errorMiddleware", "router must apply error recovery middleware")
+}
+
+func TestRouterGo_RendersServiceName(t *testing.T) {
+	out := renderApp(t, "go-gin/internal/presentation/http/router.go.tmpl")
+	assert.Contains(t, out, "payment-service")
+}
+
+func TestServerGo_HasProductionTimeouts(t *testing.T) {
+	out := renderApp(t, "go-gin/internal/presentation/http/server.go.tmpl")
+	assert.Contains(t, out, "ReadTimeout")
+	assert.Contains(t, out, "WriteTimeout")
+	assert.Contains(t, out, "IdleTimeout")
+	assert.Contains(t, out, "Shutdown", "server must expose graceful shutdown")
+}
+
+func TestMakefile_HasRequiredTargets(t *testing.T) {
+	out := renderApp(t, "go-gin/Makefile.tmpl")
+	for _, target := range []string{"build", "test", "lint", "fmt", "vet", "clean", "dev", "run"} {
+		assert.Contains(t, out, target+":", "Makefile must have target %q", target)
+	}
+	assert.Contains(t, out, "payment-service", "binary name must use service name")
+}
+
+func TestMakefile_CGODisabled(t *testing.T) {
+	out := renderApp(t, "go-gin/Makefile.tmpl")
+	assert.Contains(t, out, "CGO_ENABLED=0")
+}
+
+func TestREADME_ContainsHealthEndpoints(t *testing.T) {
+	out := renderApp(t, "go-gin/README.md.tmpl")
+	for _, ep := range []string{"/health", "/ready", "/live", "/metrics", "/version"} {
+		assert.Contains(t, out, ep, "README must document endpoint %q", ep)
+	}
+}
+
+func TestREADME_ListsTier1Standards(t *testing.T) {
+	out := renderApp(t, "go-gin/README.md.tmpl")
+	assert.Contains(t, out, "Tier 1 Standards Applied")
+	assert.Contains(t, out, "payment-service")
+	assert.Contains(t, out, "crux-plugin-kubernetes@2.0.0", "README must list plugins used")
+}
+
+func TestGitignore_ExcludesSecretsAndBinaries(t *testing.T) {
+	raw, err := os.ReadFile("go-gin/.gitignore.tmpl")
+	require.NoError(t, err)
+	content := string(raw)
+	for _, entry := range []string{"bin/", ".env", "coverage.out", ".DS_Store"} {
+		assert.Contains(t, content, entry, ".gitignore must exclude %q", entry)
+	}
+}

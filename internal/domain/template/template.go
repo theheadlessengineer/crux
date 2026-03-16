@@ -22,6 +22,7 @@ func (d *TemplateData) ToMap() map[string]any {
 	return map[string]any{
 		"service": map[string]any{
 			"name":               d.Service.Name,
+			"module":             d.Service.Module,
 			"language":           d.Service.Language,
 			"framework":          d.Service.Framework,
 			"service_type":       d.Service.ServiceType,
@@ -76,6 +77,7 @@ func (d *TemplateData) ToMap() map[string]any {
 // ServiceData holds service-level variables.
 type ServiceData struct {
 	Name              string `json:"name"`
+	Module            string `json:"module"`
 	Language          string `json:"language"`
 	Framework         string `json:"framework"`
 	ServiceType       string `json:"service_type"`
