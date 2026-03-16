@@ -25,7 +25,7 @@ func BuildRoot(version, commit, buildTime string) *cobra.Command {
 	root.PersistentFlags().StringVar(&cfg.OutputMode, "output", "text", "Output format: text or json")
 	root.PersistentFlags().StringVar(&cfg.ConfigFile, "config", "", "Path to a pre-filled configuration YAML file")
 
-	root.AddCommand(newNewCommand(cfg))
+	root.AddCommand(newNewCommand(cfg, version))
 	root.AddCommand(newVersionCommand(cfg, version, commit, buildTime))
 	root.AddCommand(newSystemCommand(cfg))
 	root.AddCommand(newValidateCommand(cfg))

@@ -5,5 +5,5 @@ import "embed"
 
 // FS is the embedded filesystem containing all .tmpl files.
 //
-//go:embed go-gin
+//go:embed all:go-gin
 var FS embed.FS

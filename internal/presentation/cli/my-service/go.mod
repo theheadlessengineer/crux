@@ -1,0 +1,11 @@
+module github.com/company/my-service
+
+go 1.26
+
+require (
+	github.com/gin-gonic/gin v1.12.0
+	go.opentelemetry.io/otel v1.42.0
+	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc v1.42.0
+	go.opentelemetry.io/otel/sdk v1.42.0
+	go.opentelemetry.io/otel/trace v1.42.0
+)
