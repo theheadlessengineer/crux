@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [],
+    "deny": [
+      "Bash(rm -rf *)",
+      "Bash(git push --force)"
+    ]
+  },
+  "env": {
+    "SERVICE_NAME": "{{ .service.name }}",
+    "ENVIRONMENT": "development"
+  }
+}

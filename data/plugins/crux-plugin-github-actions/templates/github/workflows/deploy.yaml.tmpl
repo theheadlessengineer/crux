@@ -1,0 +1,24 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy-staging:
+    name: Deploy to staging
+    runs-on: ubuntu-latest
+    environment: staging
+    {{- if eq .gha_deploy_env "none" }}
+    if: false  # Auto-deploy disabled — set gha_deploy_env to enable
+    {{- end }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build and push image
+        run: |
+          echo "TODO: build and push to {{ .gha_container_registry }}/{{ .service.name }}:${{ "{{" }} github.sha {{ "}}" }}"
+
+      - name: Deploy to staging
+        run: |
+          echo "TODO: kubectl set image deployment/{{ .service.name }} {{ .service.name }}={{ .gha_container_registry }}/{{ .service.name }}:${{ "{{" }} github.sha {{ "}}" }}"

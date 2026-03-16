@@ -1,0 +1,28 @@
+apiVersion: crux/v1
+kind: Plugin
+metadata:
+  name: crux-plugin-redis
+  version: 1.0.0
+  description: Redis integration with caching, distributed lock (Redlock), and TTL strategy
+  author: Platform Engineering
+  trustTier: 1
+  tags: [cache, redis, redlock]
+  cruxVersionConstraint: ">=1.0.0"
+spec:
+  questions:
+    - id: redis_distributed_lock
+      type: confirm
+      prompt: "Enable Redlock distributed locking?"
+      default: "false"
+    - id: redis_ttl_strategy
+      type: select
+      prompt: "Default cache TTL strategy?"
+      options: ["fixed", "sliding", "none"]
+      default: "fixed"
+  templates:
+    - internal/infrastructure/redis/redis.go.tmpl
+    - internal/infrastructure/redis/health.go.tmpl
+  hooks:
+    preGenerate: []
+    postGenerate: []
+  dependencies: []

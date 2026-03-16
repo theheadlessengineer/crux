@@ -1,0 +1,9 @@
+terraform {
+  backend "s3" {
+    bucket         = "{{ .aws_remote_state_bucket }}"
+    key            = "{{ .service.name }}/terraform.tfstate"
+    region         = "{{ .aws_region }}"
+    encrypt        = true
+    dynamodb_table = "terraform-state-lock"
+  }
+}

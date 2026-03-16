@@ -1,0 +1,37 @@
+apiVersion: crux/v1
+kind: Plugin
+metadata:
+  name: crux-plugin-kafka
+  version: 1.0.0
+  description: Kafka integration with producer, consumer, DLQ, outbox pattern, and schema registry
+  author: Platform Engineering
+  trustTier: 1
+  tags: [messaging, kafka, dlq, outbox]
+  cruxVersionConstraint: ">=1.0.0"
+spec:
+  questions:
+    - id: kafka_direction
+      type: select
+      prompt: "Kafka usage direction?"
+      options: ["producer", "consumer", "both"]
+      default: "both"
+    - id: kafka_dlq
+      type: confirm
+      prompt: "Enable Dead Letter Queue (DLQ)?"
+      default: "true"
+    - id: kafka_outbox
+      type: confirm
+      prompt: "Enable transactional outbox pattern?"
+      default: "false"
+    - id: kafka_schema_format
+      type: select
+      prompt: "Message schema format?"
+      options: ["json", "avro", "protobuf"]
+      default: "json"
+  templates:
+    - internal/infrastructure/kafka/kafka.go.tmpl
+    - internal/infrastructure/kafka/health.go.tmpl
+  hooks:
+    preGenerate: []
+    postGenerate: []
+  dependencies: []

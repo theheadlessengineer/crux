@@ -1,0 +1,38 @@
+apiVersion: crux/v1
+kind: Plugin
+metadata:
+  name: crux-plugin-postgresql
+  version: 1.0.0
+  description: PostgreSQL integration with connection pooling, migrations, read replica, and audit logging
+  author: Platform Engineering
+  trustTier: 1
+  tags: [database, postgresql, migrations]
+  cruxVersionConstraint: ">=1.0.0"
+spec:
+  questions:
+    - id: pg_version
+      type: select
+      prompt: "Which PostgreSQL version?"
+      options: ["15", "16", "17"]
+      default: "16"
+    - id: pg_read_replica
+      type: confirm
+      prompt: "Enable read replica support?"
+      default: "false"
+    - id: pg_audit_log
+      type: select
+      prompt: "Audit logging strategy?"
+      options: ["none", "application", "pgaudit"]
+      default: "application"
+    - id: pg_migration_tool
+      type: select
+      prompt: "Database migration tool?"
+      options: ["goose", "migrate"]
+      default: "goose"
+  templates:
+    - internal/infrastructure/postgres/postgres.go.tmpl
+    - internal/infrastructure/postgres/health.go.tmpl
+  hooks:
+    preGenerate: []
+    postGenerate: []
+  dependencies: []

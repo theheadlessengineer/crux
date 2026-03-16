@@ -1,0 +1,32 @@
+apiVersion: crux/v1
+kind: Plugin
+metadata:
+  name: crux-plugin-prometheus
+  version: 1.0.0
+  description: Prometheus metrics, alerting rules, and Grafana dashboard for four golden signals
+  author: Platform Engineering
+  trustTier: 1
+  tags: [observability, prometheus, grafana, alerts, metrics]
+  cruxVersionConstraint: ">=1.0.0"
+spec:
+  questions:
+    - id: prom_alerting_backend
+      type: select
+      prompt: "Alert routing backend?"
+      options: ["alertmanager", "pagerduty", "opsgenie", "none"]
+      default: "alertmanager"
+    - id: prom_p99_latency_ms
+      type: input
+      prompt: "p99 latency alert threshold (ms)?"
+      default: "500"
+    - id: prom_error_rate_threshold
+      type: input
+      prompt: "Error rate alert threshold (%)?"
+      default: "5"
+  templates:
+    - monitoring/alerts.yaml.tmpl
+    - monitoring/dashboard.json.tmpl
+  hooks:
+    preGenerate: []
+    postGenerate: []
+  dependencies: []

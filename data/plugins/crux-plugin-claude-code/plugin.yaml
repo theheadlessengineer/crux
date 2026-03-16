@@ -1,0 +1,27 @@
+apiVersion: crux/v1
+kind: Plugin
+metadata:
+  name: crux-plugin-claude-code
+  version: 1.0.0
+  description: Claude Code AI assistant configuration — CLAUDE.md context file and .claude/settings.json
+  author: Platform Engineering
+  trustTier: 1
+  tags: [ai, claude, coding-assistant, developer-experience]
+  cruxVersionConstraint: ">=1.0.0"
+spec:
+  questions:
+    - id: claude_team_name
+      type: input
+      prompt: "Team name (for CLAUDE.md context)?"
+      default: "Platform Engineering"
+    - id: claude_no_touch_paths
+      type: input
+      prompt: "Comma-separated paths Claude must not modify (e.g. infra/terraform)?"
+      default: "infra/terraform,.github/workflows"
+  templates:
+    - CLAUDE.md.tmpl
+    - .claude/settings.json.tmpl
+  hooks:
+    preGenerate: []
+    postGenerate: []
+  dependencies: []

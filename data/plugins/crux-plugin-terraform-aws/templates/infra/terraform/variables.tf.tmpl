@@ -1,0 +1,20 @@
+variable "aws_region" {
+  description = "AWS region to deploy resources into"
+  type        = string
+  default     = "{{ .aws_region }}"
+}
+
+variable "environment" {
+  description = "Deployment environment (dev, staging, prod)"
+  type        = string
+  validation {
+    condition     = contains(["dev", "staging", "prod"], var.environment)
+    error_message = "environment must be dev, staging, or prod"
+  }
+}
+
+variable "service_name" {
+  description = "Service name — used for resource naming and tagging"
+  type        = string
+  default     = "{{ .service.name }}"
+}

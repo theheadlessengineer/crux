@@ -1,0 +1,40 @@
+apiVersion: crux/v1
+kind: Plugin
+metadata:
+  name: crux-plugin-kubernetes
+  version: 1.0.0
+  description: Kubernetes manifests — Deployment, Service, HPA, PDB, and Network Policy
+  author: Platform Engineering
+  trustTier: 1
+  tags: [kubernetes, k8s, infra, hpa, pdb]
+  cruxVersionConstraint: ">=1.0.0"
+spec:
+  questions:
+    - id: k8s_deployment_strategy
+      type: select
+      prompt: "Deployment strategy?"
+      options: ["rolling", "recreate", "canary"]
+      default: "rolling"
+    - id: k8s_service_mesh
+      type: select
+      prompt: "Service mesh?"
+      options: ["none", "istio", "linkerd"]
+      default: "none"
+    - id: k8s_min_replicas
+      type: input
+      prompt: "Minimum replica count?"
+      default: "2"
+    - id: k8s_max_replicas
+      type: input
+      prompt: "Maximum replica count (HPA)?"
+      default: "10"
+  templates:
+    - kubernetes/deployment.yaml.tmpl
+    - kubernetes/service.yaml.tmpl
+    - kubernetes/hpa.yaml.tmpl
+    - kubernetes/pdb.yaml.tmpl
+    - kubernetes/networkpolicy.yaml.tmpl
+  hooks:
+    preGenerate: []
+    postGenerate: []
+  dependencies: []

@@ -1,0 +1,35 @@
+apiVersion: crux/v1
+kind: Plugin
+metadata:
+  name: crux-plugin-terraform-aws
+  version: 1.0.0
+  description: Terraform AWS infrastructure — RDS, ElastiCache, MSK, and IAM modules
+  author: Platform Engineering
+  trustTier: 1
+  tags: [terraform, aws, iac, rds, elasticache, msk]
+  cruxVersionConstraint: ">=1.0.0"
+spec:
+  questions:
+    - id: aws_region
+      type: select
+      prompt: "Primary AWS region?"
+      options: ["us-east-1", "us-west-2", "eu-west-1", "eu-central-1", "ap-southeast-1"]
+      default: "eu-west-1"
+    - id: aws_environments
+      type: select
+      prompt: "Environments to provision?"
+      options: ["dev,staging,prod", "dev,prod", "prod"]
+      default: "dev,staging,prod"
+    - id: aws_remote_state_bucket
+      type: input
+      prompt: "Terraform remote state S3 bucket name?"
+      default: "company-terraform-state"
+  templates:
+    - infra/terraform/main.tf.tmpl
+    - infra/terraform/variables.tf.tmpl
+    - infra/terraform/outputs.tf.tmpl
+    - infra/terraform/backend.tf.tmpl
+  hooks:
+    preGenerate: []
+    postGenerate: []
+  dependencies: []

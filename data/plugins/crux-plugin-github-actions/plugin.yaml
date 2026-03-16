@@ -1,0 +1,33 @@
+apiVersion: crux/v1
+kind: Plugin
+metadata:
+  name: crux-plugin-github-actions
+  version: 1.0.0
+  description: GitHub Actions CI/CD pipeline — lint, test, build, scan, and deploy workflows
+  author: Platform Engineering
+  trustTier: 1
+  tags: [ci, cd, github-actions, pipeline]
+  cruxVersionConstraint: ">=1.0.0"
+spec:
+  questions:
+    - id: gha_coverage_threshold
+      type: input
+      prompt: "Minimum test coverage threshold (%)?"
+      default: "80"
+    - id: gha_container_registry
+      type: select
+      prompt: "Container registry?"
+      options: ["ghcr.io", "ecr", "dockerhub"]
+      default: "ghcr.io"
+    - id: gha_deploy_env
+      type: select
+      prompt: "Auto-deploy on merge to main?"
+      options: ["none", "staging", "staging+prod"]
+      default: "staging"
+  templates:
+    - github/workflows/ci.yaml.tmpl
+    - github/workflows/deploy.yaml.tmpl
+  hooks:
+    preGenerate: []
+    postGenerate: []
+  dependencies: []

@@ -1,0 +1,27 @@
+apiVersion: crux/v1
+kind: Plugin
+metadata:
+  name: crux-plugin-auth-jwt
+  version: 1.0.0
+  description: JWT authentication middleware with RBAC/ABAC authorization stubs
+  author: Platform Engineering
+  trustTier: 1
+  tags: [auth, jwt, rbac, abac]
+  cruxVersionConstraint: ">=1.0.0"
+spec:
+  questions:
+    - id: auth_authz_model
+      type: select
+      prompt: "Authorization model?"
+      options: ["rbac", "abac", "none"]
+      default: "rbac"
+    - id: auth_jwks_url
+      type: input
+      prompt: "JWKS endpoint URL (leave blank to configure later)?"
+      default: ""
+  templates:
+    - internal/infrastructure/auth/jwt.go.tmpl
+  hooks:
+    preGenerate: []
+    postGenerate: []
+  dependencies: []

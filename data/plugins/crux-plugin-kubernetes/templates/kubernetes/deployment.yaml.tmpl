@@ -1,0 +1,70 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .service.name }}
+  labels:
+    app: {{ .service.name }}
+    team: {{ .service.team }}
+    environment: {{ "{{" }} .Values.environment {{ "}}" }}
+spec:
+  replicas: {{ .k8s_min_replicas }}
+  selector:
+    matchLabels:
+      app: {{ .service.name }}
+  strategy:
+    {{- if eq .k8s_deployment_strategy "rolling" }}
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+    {{- else if eq .k8s_deployment_strategy "recreate" }}
+    type: Recreate
+    {{- end }}
+  template:
+    metadata:
+      labels:
+        app: {{ .service.name }}
+        team: {{ .service.team }}
+        environment: {{ "{{" }} .Values.environment {{ "}}" }}
+    spec:
+      serviceAccountName: {{ .service.name }}
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65534
+        readOnlyRootFilesystem: true
+      containers:
+        - name: {{ .service.name }}
+          image: {{ "{{" }} .Values.image.repository {{ "}}" }}:{{ "{{" }} .Values.image.tag {{ "}}" }}
+          ports:
+            - containerPort: 8080
+              name: http
+          env:
+            - name: SERVICE_NAME
+              value: {{ .service.name }}
+            - name: ENVIRONMENT
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.labels['environment']
+          livenessProbe:
+            httpGet:
+              path: /live
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 15
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: [ALL]
