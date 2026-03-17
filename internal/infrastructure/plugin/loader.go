@@ -186,6 +186,11 @@ func ValidateManifest(m *domain.Manifest) error {
 	if m.Metadata.CruxVersionConstraint == "" {
 		return fmt.Errorf("metadata.cruxVersionConstraint is required")
 	}
+	for _, q := range m.Spec.Questions {
+		if q.Help == "" {
+			return fmt.Errorf("spec.questions[%s]: help is required", q.ID)
+		}
+	}
 	return nil
 }
 

@@ -1,0 +1,31 @@
+# syntax=docker/dockerfile:1
+
+# ── Stage 1: Build ────────────────────────────────────────────────────────────
+FROM eclipse-temurin:21-jdk AS builder
+
+WORKDIR /app
+COPY pom.xml .
+COPY src ./src
+
+RUN apt-get update && apt-get install -y maven && rm -rf /var/lib/apt/lists/*
+RUN mvn -q package -DskipTests
+
+# ── Stage 2: Final ────────────────────────────────────────────────────────────
+FROM eclipse-temurin:21-jre
+
+WORKDIR /app
+
+COPY --from=builder /app/target/*.jar app.jar
+
+# Non-root user — Tier 1 standard.
+RUN useradd --no-create-home --shell /bin/false nonroot
+USER nonroot
+
+EXPOSE 8080
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
+  CMD curl -f http://localhost:8080/health || exit 1
+
+ENV SERVICE_NAME="{{ .service.name }}"
+
+ENTRYPOINT ["java", "-jar", "app.jar"]

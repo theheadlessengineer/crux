@@ -13,10 +13,12 @@ spec:
     - id: redis_distributed_lock
       type: confirm
       prompt: "Enable Redlock distributed locking?"
+      help: "Generates a Redlock client for distributed mutual exclusion across multiple Redis nodes. Use this when you need to coordinate work across service instances (e.g. scheduled jobs, inventory reservations)."
       default: "false"
     - id: redis_ttl_strategy
       type: select
       prompt: "Default cache TTL strategy?"
+      help: "fixed sets a constant expiry on every write; sliding resets the TTL on each read, keeping hot keys alive; none omits a default TTL so keys must be expired explicitly per call-site."
       options: ["fixed", "sliding", "none"]
       default: "fixed"
   templates:

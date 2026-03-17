@@ -13,22 +13,36 @@ spec:
     - id: pg_version
       type: select
       prompt: "Which PostgreSQL version?"
+      help: "The PostgreSQL major version to target. 16 is the current LTS recommendation. Choose 17 for the latest features; choose 15 only if your managed database provider does not yet support 16+."
       options: ["15", "16", "17"]
       default: "16"
     - id: pg_read_replica
       type: confirm
       prompt: "Enable read replica support?"
+      help: "Generates a second connection pool pointed at a read-only replica. Use this to offload reporting queries and reduce load on the primary. Requires a replica to be provisioned separately."
       default: "false"
     - id: pg_audit_log
       type: select
       prompt: "Audit logging strategy?"
+      help: "none skips audit logging; application logs writes via the service layer (portable, lower overhead); pgaudit enables the PostgreSQL extension for comprehensive server-side audit trails (recommended for compliance)."
       options: ["none", "application", "pgaudit"]
       default: "application"
     - id: pg_migration_tool
       type: select
       prompt: "Database migration tool?"
+      help: "The tool used to manage schema migrations. Defaults are chosen per language (goose/migrate for Go, alembic for Python, flyway/liquibase for Java, db-migrate/knex for Node). Pick the one your team already uses."
       options: ["goose", "migrate"]
       default: "goose"
+      options_by_language:
+        go: ["goose", "migrate"]
+        python: ["alembic", "flyway"]
+        java: ["flyway", "liquibase"]
+        node: ["db-migrate", "knex", "flyway"]
+      default_by_language:
+        go: "goose"
+        python: "alembic"
+        java: "flyway"
+        node: "db-migrate"
   templates:
     - internal/infrastructure/postgres/postgres.go.tmpl
     - internal/infrastructure/postgres/health.go.tmpl

@@ -13,10 +13,12 @@ spec:
     - id: claude_team_name
       type: input
       prompt: "Team name (for CLAUDE.md context)?"
+      help: "Written into CLAUDE.md so Claude Code understands the team context when suggesting code. Use the same name as your team slug (e.g. payments, data-platform)."
       default: "Platform Engineering"
     - id: claude_no_touch_paths
       type: input
       prompt: "Comma-separated paths Claude must not modify (e.g. infra/terraform)?"
+      help: "Paths added to the CLAUDE.md no-touch list. Claude Code will avoid suggesting edits to these paths. Useful for protecting generated IaC, CI pipelines, or compliance-sensitive files."
       default: "infra/terraform,.github/workflows"
   templates:
     - CLAUDE.md.tmpl

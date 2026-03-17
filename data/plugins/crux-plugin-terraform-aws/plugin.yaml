@@ -13,16 +13,19 @@ spec:
     - id: aws_region
       type: select
       prompt: "Primary AWS region?"
+      help: "The AWS region where all infrastructure modules are provisioned by default. Choose the region closest to your users or where your organisation's primary workloads run."
       options: ["us-east-1", "us-west-2", "eu-west-1", "eu-central-1", "ap-southeast-1"]
       default: "eu-west-1"
     - id: aws_environments
       type: select
       prompt: "Environments to provision?"
+      help: "The set of Terraform workspaces to generate. Each environment gets its own variable file and backend state key. dev,staging,prod is the standard three-tier setup."
       options: ["dev,staging,prod", "dev,prod", "prod"]
       default: "dev,staging,prod"
     - id: aws_remote_state_bucket
       type: input
       prompt: "Terraform remote state S3 bucket name?"
+      help: "The S3 bucket used to store Terraform state files. Must already exist and have versioning enabled. Each service gets its own state key within this bucket."
       default: "company-terraform-state"
   templates:
     - infra/terraform/main.tf.tmpl

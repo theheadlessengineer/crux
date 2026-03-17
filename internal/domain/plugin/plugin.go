@@ -24,12 +24,14 @@ type Hook func(ctx context.Context, hctx *HookContext) error
 
 // QuestionSpec is a single prompt contributed by a plugin.
 type QuestionSpec struct {
-	ID      string   `yaml:"id"`
-	Type    string   `yaml:"type"`
-	Prompt  string   `yaml:"prompt"`
-	Help    string   `yaml:"help,omitempty"`
-	Options []string `yaml:"options,omitempty"`
-	Default string   `yaml:"default,omitempty"`
+	ID            string              `yaml:"id"`
+	Type          string              `yaml:"type"`
+	Prompt        string              `yaml:"prompt"`
+	Help          string              `yaml:"help,omitempty"`
+	Options       []string            `yaml:"options,omitempty"`
+	OptionsByLang map[string][]string `yaml:"options_by_language,omitempty"`
+	Default       string              `yaml:"default,omitempty"`
+	DefaultByLang map[string]string   `yaml:"default_by_language,omitempty"`
 }
 
 // HooksSpec lists hook command strings declared in the manifest.

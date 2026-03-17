@@ -29,6 +29,7 @@ spec:
     - id: pg_version
       type: select
       prompt: "Which PostgreSQL version?"
+      help: "The PostgreSQL major version to target."
       options: ["15", "16"]
       default: "16"
 `

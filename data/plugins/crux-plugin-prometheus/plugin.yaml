@@ -13,15 +13,18 @@ spec:
     - id: prom_alerting_backend
       type: select
       prompt: "Alert routing backend?"
+      help: "Where firing alerts are sent. alertmanager routes via your in-cluster Alertmanager; pagerduty and opsgenie send directly to those on-call platforms. Choose none to generate rules without a receiver."
       options: ["alertmanager", "pagerduty", "opsgenie", "none"]
       default: "alertmanager"
     - id: prom_p99_latency_ms
       type: input
       prompt: "p99 latency alert threshold (ms)?"
+      help: "An alert fires when the 99th-percentile request latency exceeds this value for more than 5 minutes. Should match or be slightly above your SLO p99 target."
       default: "500"
     - id: prom_error_rate_threshold
       type: input
       prompt: "Error rate alert threshold (%)?"
+      help: "An alert fires when the HTTP 5xx error rate exceeds this percentage over a 5-minute window. 5% is a sensible starting point; tighten for critical payment or auth services."
       default: "5"
   templates:
     - monitoring/alerts.yaml.tmpl

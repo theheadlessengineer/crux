@@ -33,7 +33,9 @@ func Generate(ctx context.Context, cfg *Config, outputDir string) error {
 
 	data := buildTemplateData(cfg)
 
-	for tmplName, relPath := range fileMap(cfg.ServiceName) {
+	fm := fileMap(cfg)
+
+	for tmplName, relPath := range fm {
 		outPath := filepath.Join(outputDir, relPath)
 		if err := eng.Render(tmplName, data, outPath); err != nil {
 			return fmt.Errorf("render %s: %w", tmplName, err)
@@ -42,7 +44,7 @@ func Generate(ctx context.Context, cfg *Config, outputDir string) error {
 
 	// Create empty-directory stubs (gitkeep files) for directories that have
 	// no templates but must exist in the generated skeleton.
-	for _, dir := range emptyDirs() {
+	for _, dir := range emptyDirs(cfg) {
 		if err := mkGitkeep(filepath.Join(outputDir, dir)); err != nil {
 			return err
 		}
@@ -52,38 +54,32 @@ func Generate(ctx context.Context, cfg *Config, outputDir string) error {
 	return nil
 }
 
-// fileMap returns the mapping of template name → relative output path.
-// Template names match the embedded FS paths (e.g. "go-gin/cmd/main.go.tmpl").
-func fileMap(serviceName string) map[string]string {
+// fileMap returns the mapping of template name → relative output path for the
+// selected language. Shared (language-agnostic) files are sourced from go-gin
+// templates; language-specific files come from the language-specific directory.
+func fileMap(cfg *Config) map[string]string {
+	shared := sharedFileMap()
+
+	switch cfg.Language {
+	case "python", "python-fastapi":
+		return mergeMaps(shared, pythonFastAPIFileMap())
+	case "java", "java-spring":
+		return mergeMaps(shared, javaSpringFileMap())
+	case "node", "node-express":
+		return mergeMaps(shared, nodeExpressFileMap())
+	default: // "go", "go-gin", or empty
+		return mergeMaps(shared, goGinFileMap(cfg.ServiceName))
+	}
+}
+
+// sharedFileMap returns language-agnostic files (YAML, Markdown, CI stubs)
+// that are identical across all languages. These are sourced from go-gin since
+// they contain no Go-specific content.
+func sharedFileMap() map[string]string {
 	return map[string]string{
-		// Application
-		"go-gin/cmd/main.go.tmpl":                                   "cmd/" + serviceName + "/main.go",
-		"go-gin/internal/config/config.go.tmpl":                     "internal/config/config.go",
-		"go-gin/internal/domain/health/registry.go.tmpl":            "internal/domain/health/registry.go",
-		"go-gin/internal/presentation/http/router.go.tmpl":          "internal/presentation/http/router.go",
-		"go-gin/internal/presentation/http/health.go.tmpl":          "internal/presentation/http/health.go",
-		"go-gin/internal/presentation/http/server.go.tmpl":          "internal/presentation/http/server.go",
-		"go-gin/internal/infrastructure/logging/logger.go.tmpl":     "internal/infrastructure/logging/logger.go",
-		"go-gin/internal/infrastructure/logging/middleware.go.tmpl": "internal/infrastructure/logging/middleware.go",
-		"go-gin/internal/infrastructure/errors/handler.go.tmpl":     "internal/infrastructure/errors/handler.go",
-		"go-gin/internal/infrastructure/tracing/provider.go.tmpl":   "internal/infrastructure/tracing/provider.go",
-		"go-gin/internal/infrastructure/tracing/middleware.go.tmpl": "internal/infrastructure/tracing/middleware.go",
-		"go-gin/internal/infrastructure/tracing/httpclient.go.tmpl": "internal/infrastructure/tracing/httpclient.go",
-		"go-gin/internal/infrastructure/shutdown/shutdown.go.tmpl":  "internal/infrastructure/shutdown/shutdown.go",
-		// Root files
-		"go-gin/go.mod.tmpl":             "go.mod",
-		"go-gin/Makefile.tmpl":           "Makefile",
-		"go-gin/Dockerfile.tmpl":         "Dockerfile",
-		"go-gin/.dockerignore.tmpl":      ".dockerignore",
-		"go-gin/docker-compose.yml.tmpl": "docker-compose.yml",
-		"go-gin/.gitignore.tmpl":         ".gitignore",
-		"go-gin/.editorconfig.tmpl":      ".editorconfig",
-		"go-gin/.commitlintrc.yaml.tmpl": ".commitlintrc.yaml",
-		"go-gin/.envrc.tmpl":             ".envrc",
-		"go-gin/README.md.tmpl":          "README.md",
-		"go-gin/CHANGELOG.md.tmpl":       "CHANGELOG.md",
-		"go-gin/resilience.yaml.tmpl":    "resilience.yaml",
-		"go-gin/slo.yaml.tmpl":           "slo.yaml",
+		// Operational config
+		"go-gin/resilience.yaml.tmpl": "resilience.yaml",
+		"go-gin/slo.yaml.tmpl":        "slo.yaml",
 		// Kubernetes
 		"go-gin/kubernetes/deployment.yaml.tmpl":            "infra/kubernetes/deployment.yaml",
 		"go-gin/kubernetes/networkpolicy-ingress.yaml.tmpl": "infra/kubernetes/networkpolicy-ingress.yaml",
@@ -101,6 +97,38 @@ func fileMap(serviceName string) map[string]string {
 		"go-gin/docs/capacity-model.md.tmpl":                         "docs/capacity-model.md",
 		"go-gin/docs/TODO.md.tmpl":                                   "docs/TODO.md",
 		"go-gin/docs/adr/ADR-001-initial-technology-choices.md.tmpl": "docs/adr/ADR-001-initial-technology-choices.md",
+		// Root files shared across languages
+		"go-gin/.editorconfig.tmpl":      ".editorconfig",
+		"go-gin/.commitlintrc.yaml.tmpl": ".commitlintrc.yaml",
+		"go-gin/CHANGELOG.md.tmpl":       "CHANGELOG.md",
+		"go-gin/.gitignore.tmpl":         ".gitignore",
+		"go-gin/.envrc.tmpl":             ".envrc",
+		"go-gin/README.md.tmpl":          "README.md",
+	}
+}
+
+func goGinFileMap(serviceName string) map[string]string {
+	return map[string]string{
+		// Application
+		"go-gin/cmd/main.go.tmpl":                                   "cmd/" + serviceName + "/main.go",
+		"go-gin/internal/config/config.go.tmpl":                     "internal/config/config.go",
+		"go-gin/internal/domain/health/registry.go.tmpl":            "internal/domain/health/registry.go",
+		"go-gin/internal/presentation/http/router.go.tmpl":          "internal/presentation/http/router.go",
+		"go-gin/internal/presentation/http/health.go.tmpl":          "internal/presentation/http/health.go",
+		"go-gin/internal/presentation/http/server.go.tmpl":          "internal/presentation/http/server.go",
+		"go-gin/internal/infrastructure/logging/logger.go.tmpl":     "internal/infrastructure/logging/logger.go",
+		"go-gin/internal/infrastructure/logging/middleware.go.tmpl": "internal/infrastructure/logging/middleware.go",
+		"go-gin/internal/infrastructure/errors/handler.go.tmpl":     "internal/infrastructure/errors/handler.go",
+		"go-gin/internal/infrastructure/tracing/provider.go.tmpl":   "internal/infrastructure/tracing/provider.go",
+		"go-gin/internal/infrastructure/tracing/middleware.go.tmpl": "internal/infrastructure/tracing/middleware.go",
+		"go-gin/internal/infrastructure/tracing/httpclient.go.tmpl": "internal/infrastructure/tracing/httpclient.go",
+		"go-gin/internal/infrastructure/shutdown/shutdown.go.tmpl":  "internal/infrastructure/shutdown/shutdown.go",
+		// Root
+		"go-gin/go.mod.tmpl":             "go.mod",
+		"go-gin/Makefile.tmpl":           "Makefile",
+		"go-gin/Dockerfile.tmpl":         "Dockerfile",
+		"go-gin/.dockerignore.tmpl":      ".dockerignore",
+		"go-gin/docker-compose.yml.tmpl": "docker-compose.yml",
 		// CI
 		"go-gin/github/workflows/ci.yaml.tmpl": ".github/workflows/ci.yaml",
 		// Scripts
@@ -111,14 +139,63 @@ func fileMap(serviceName string) map[string]string {
 	}
 }
 
+func pythonFastAPIFileMap() map[string]string {
+	return map[string]string{
+		"python-fastapi/main.py.tmpl":                  "main.py",
+		"python-fastapi/app/config.py.tmpl":            "app/config.py",
+		"python-fastapi/app/health.py.tmpl":            "app/health.py",
+		"python-fastapi/app/logging_config.py.tmpl":    "app/logging_config.py",
+		"python-fastapi/app/middleware.py.tmpl":        "app/middleware.py",
+		"python-fastapi/requirements.txt.tmpl":         "requirements.txt",
+		"python-fastapi/Makefile.tmpl":                 "Makefile",
+		"python-fastapi/Dockerfile.tmpl":               "Dockerfile",
+		"python-fastapi/github/workflows/ci.yaml.tmpl": ".github/workflows/ci.yaml",
+	}
+}
+
+func javaSpringFileMap() map[string]string {
+	return map[string]string{
+		"java-spring/src/main/java/Application.java.tmpl":             "src/main/java/Application.java",
+		"java-spring/src/main/java/health/HealthController.java.tmpl": "src/main/java/health/HealthController.java",
+		"java-spring/src/main/resources/application.yaml.tmpl":        "src/main/resources/application.yaml",
+		"java-spring/pom.xml.tmpl":                                    "pom.xml",
+		"java-spring/Makefile.tmpl":                                   "Makefile",
+		"java-spring/Dockerfile.tmpl":                                 "Dockerfile",
+		"java-spring/github/workflows/ci.yaml.tmpl":                   ".github/workflows/ci.yaml",
+	}
+}
+
+func nodeExpressFileMap() map[string]string {
+	return map[string]string{
+		"node-express/index.js.tmpl":                 "index.js",
+		"node-express/src/app.js.tmpl":               "src/app.js",
+		"node-express/src/health.js.tmpl":            "src/health.js",
+		"node-express/src/logging.js.tmpl":           "src/logging.js",
+		"node-express/src/middleware.js.tmpl":        "src/middleware.js",
+		"node-express/package.json.tmpl":             "package.json",
+		"node-express/Makefile.tmpl":                 "Makefile",
+		"node-express/Dockerfile.tmpl":               "Dockerfile",
+		"node-express/github/workflows/ci.yaml.tmpl": ".github/workflows/ci.yaml",
+	}
+}
+
 // emptyDirs lists directories that need a .gitkeep because no template writes into them.
-func emptyDirs() []string {
-	return []string{
-		"internal/app",
-		"internal/domain",
-		"infra/terraform",
-		"tests/unit",
-		"tests/integration",
+func emptyDirs(cfg *Config) []string {
+	switch cfg.Language {
+	case "python", "python-fastapi":
+		return []string{"tests/unit", "tests/integration", "infra/terraform"}
+	case "java", "java-spring":
+		return []string{"src/test/java", "infra/terraform"}
+	case "node", "node-express":
+		return []string{"tests", "infra/terraform"}
+	default:
+		return []string{
+			"internal/app",
+			"internal/domain",
+			"infra/terraform",
+			"tests/unit",
+			"tests/integration",
+		}
 	}
 }
 
@@ -187,4 +264,16 @@ func buildTemplateData(cfg *Config) *domain.TemplateData {
 		Plugins: []string{},
 		Answers: map[string]any{},
 	}
+}
+
+// mergeMaps merges src into dst (dst takes precedence on key collision).
+func mergeMaps(dst, src map[string]string) map[string]string {
+	result := make(map[string]string, len(dst)+len(src))
+	for k, v := range dst {
+		result[k] = v
+	}
+	for k, v := range src {
+		result[k] = v
+	}
+	return result
 }

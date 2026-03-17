@@ -35,6 +35,7 @@ type Model struct {
 	width          int
 	height         int
 	answers        map[string]prompt.Answer
+	answersScroll  int // scroll offset for the answers panel
 }
 
 // NewModel creates a TUI model for the given session and service name.
@@ -77,24 +78,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m Model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
-	// Global keys processed before mode checks.
-	switch msg.String() {
-	case "ctrl+c":
-		m.confirmingQuit = true
-		return m, nil
-	case "?":
-		if !m.isTextInput() {
-			m.showHelp = !m.showHelp
-			return m, nil
-		}
-	case "t":
-		if !m.isTextInput() {
-			next := NextTheme(&m.theme)
-			m.theme = next
-			m.styles = next.BuildStyles()
-			SaveThemePreference(&next)
-			return m, nil
-		}
+	if updated, handled := m.handleGlobalKey(msg); handled {
+		return updated, nil
 	}
 
 	if m.confirmingQuit {
@@ -122,6 +107,40 @@ func (m Model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		return m.updateMultiSelect(msg)
 	}
 	return m, nil
+}
+
+// handleGlobalKey processes keys that apply regardless of current mode.
+// Returns (model, true) when the key was consumed.
+func (m Model) handleGlobalKey(msg tea.KeyMsg) (Model, bool) {
+	switch msg.String() {
+	case "ctrl+c":
+		m.confirmingQuit = true
+		return m, true
+	case "?":
+		if !m.isTextInput() {
+			m.showHelp = !m.showHelp
+			return m, true
+		}
+	case "t":
+		if !m.isTextInput() {
+			next := NextTheme(&m.theme)
+			m.theme = next
+			m.styles = next.BuildStyles()
+			SaveThemePreference(&next)
+			return m, true
+		}
+	case "ctrl+up", "pgup":
+		if !m.isTextInput() && m.answersScroll > 0 {
+			m.answersScroll--
+		}
+		return m, true
+	case "ctrl+down", "pgdn":
+		if !m.isTextInput() {
+			m.answersScroll++
+		}
+		return m, true
+	}
+	return m, false
 }
 
 func (m Model) handleQuitConfirm(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
@@ -255,6 +274,7 @@ func (m Model) recordAnswer(answer prompt.Answer) Model {
 	m.cursor = 0
 	m.selected = make(map[int]bool)
 	m.err = ""
+	m.answersScroll = 0 // scroll to top so new answer is visible
 	m.current = m.session.NextQuestion()
 	if m.current == nil {
 		m.reviewMode = true
@@ -470,7 +490,7 @@ func (m Model) renderQuestionPanel(w, h int) string {
 			b.WriteString("\n" + m.styles.Error.Render("  ✘ "+m.err) + "\n")
 		}
 		if q.Help != "" {
-			b.WriteString("\n" + m.styles.Border.Render(strings.Repeat("─", innerW)) + "\n")
+			b.WriteString("\n" + m.styles.Muted.Render(strings.Repeat("─", innerW)) + "\n")
 			b.WriteString(wrapText(q.Help, innerW, m.styles.Muted))
 		}
 	}
@@ -549,34 +569,72 @@ func (m Model) renderAnswersPanel(w, h int) string {
 		innerW = 8
 	}
 
-	var b strings.Builder
+	// Build all answer lines in question order.
+	var lines []string
 	if len(m.answers) == 0 {
-		b.WriteString(m.styles.Muted.Render("  no answers yet") + "\n")
+		lines = append(lines, m.styles.Muted.Render("  no answers yet"))
 	} else {
-		// Walk questions in order so answers appear in question order.
 		for _, q := range m.session.Graph().Questions() {
 			a, ok := m.answers[q.ID]
 			if !ok {
 				continue
 			}
-			key := m.styles.Muted.Render(truncate(q.ID, innerW-2))
-			val := lipgloss.NewStyle().Foreground(m.theme.Accent).
-				Render(truncate(fmt.Sprintf("%v", a.Value), innerW-2))
-			b.WriteString(key + "\n")
-			b.WriteString("  " + val + "\n\n")
+			question := m.styles.Muted.Render(truncate(q.Prompt, innerW-2))
+			lines = append(lines, question)
+
+			if vals, ok := a.Value.([]string); ok {
+				for _, v := range vals {
+					lines = append(lines, "  "+lipgloss.NewStyle().Foreground(m.theme.Accent).Render("- "+v))
+				}
+			} else {
+				val := lipgloss.NewStyle().Foreground(m.theme.Accent).
+					Render(truncate(fmt.Sprintf("%v", a.Value), innerW-2))
+				lines = append(lines, "  "+val)
+			}
+			lines = append(lines, "") // blank separator
 		}
 	}
 
-	title := m.styles.Title.Render("answers")
+	// Apply scroll offset — clamp to valid range.
+	visibleLines := h - 4 // subtract title (2 lines) + border (2 lines)
+	if visibleLines < 1 {
+		visibleLines = 1
+	}
+	maxScroll := len(lines) - visibleLines
+	if maxScroll < 0 {
+		maxScroll = 0
+	}
+	scroll := m.answersScroll
+	if scroll > maxScroll {
+		scroll = maxScroll
+	}
+	if scroll < 0 {
+		scroll = 0
+	}
+
+	end := scroll + visibleLines
+	if end > len(lines) {
+		end = len(lines)
+	}
+	visible := lines[scroll:end]
+
+	// Scroll indicator suffix on title.
+	scrollHint := ""
+	if maxScroll > 0 {
+		scrollHint = m.styles.Muted.Render(fmt.Sprintf(" (%d/%d)", scroll+1, len(lines)))
+	}
+
+	title := m.styles.Title.Render("answers") + scrollHint
+	content := lipgloss.NewStyle().Bold(true).Foreground(m.theme.Title).Render(title) +
+		"\n\n" + strings.Join(visible, "\n")
+
 	return lipgloss.NewStyle().
 		Border(lipgloss.RoundedBorder()).
 		BorderForeground(m.theme.Border).
 		Width(innerW).
 		Height(h).
 		Padding(0, 1).
-		Render(
-			lipgloss.NewStyle().Bold(true).Foreground(m.theme.Title).Render(title) + "\n\n" + b.String(),
-		)
+		Render(content)
 }
 
 // renderReview renders the full-screen review/confirmation screen.
@@ -662,11 +720,11 @@ func (m Model) renderStatusBar() string {
 	var keys string
 	switch {
 	case m.current != nil && m.current.Type == prompt.QuestionTypeMultiSelect:
-		keys = " ↑/↓ navigate  space toggle  enter confirm  b back  t theme  ctrl+c quit"
+		keys = " ↑/↓ navigate  space toggle  enter confirm  b back  ctrl+↑/↓ scroll answers  t theme  ctrl+c quit"
 	case m.current != nil && m.isTextInput():
 		keys = " type answer  enter confirm  backspace delete  b back (when empty)  ctrl+c quit"
 	default:
-		keys = " ↑/↓ navigate  enter confirm  b back  t theme  ? help  ctrl+c quit"
+		keys = " ↑/↓ navigate  enter confirm  b back  ctrl+↑/↓ scroll answers  t theme  ? help  ctrl+c quit"
 	}
 	return m.styles.StatusBar.Width(m.width).Render(keys)
 }
@@ -731,12 +789,12 @@ func wrapText(text string, maxWidth int, style lipgloss.Style) string {
 		} else if len(line)+1+len(w) <= maxWidth {
 			line += " " + w
 		} else {
-			b.WriteString(style.Render("  "+line) + "\n")
+			b.WriteString(style.Render(line) + "\n")
 			line = w
 		}
 	}
 	if line != "" {
-		b.WriteString(style.Render("  "+line) + "\n")
+		b.WriteString(style.Render(line) + "\n")
 	}
 	return b.String()
 }

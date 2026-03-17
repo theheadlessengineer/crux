@@ -13,15 +13,18 @@ spec:
     - id: gha_coverage_threshold
       type: input
       prompt: "Minimum test coverage threshold (%)?"
+      help: "The CI pipeline will fail if total test coverage drops below this value. 80 is the organisation minimum; raise it for critical services."
       default: "80"
     - id: gha_container_registry
       type: select
       prompt: "Container registry?"
+      help: "Where built images are pushed. ghcr.io uses your GitHub org credentials; ecr requires AWS IAM configuration; dockerhub requires a Docker Hub token secret."
       options: ["ghcr.io", "ecr", "dockerhub"]
       default: "ghcr.io"
     - id: gha_deploy_env
       type: select
       prompt: "Auto-deploy on merge to main?"
+      help: "Controls which environments receive an automatic deployment when a PR merges to main. staging+prod deploys sequentially with a manual approval gate before prod."
       options: ["none", "staging", "staging+prod"]
       default: "staging"
   templates:

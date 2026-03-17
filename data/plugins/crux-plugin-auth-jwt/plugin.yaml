@@ -13,11 +13,13 @@ spec:
     - id: auth_authz_model
       type: select
       prompt: "Authorization model?"
+      help: "Controls how access decisions are made. RBAC grants permissions by role; ABAC evaluates attributes (user, resource, environment) for fine-grained control. Choose none to skip and wire your own."
       options: ["rbac", "abac", "none"]
       default: "rbac"
     - id: auth_jwks_url
       type: input
       prompt: "JWKS endpoint URL (leave blank to configure later)?"
+      help: "The URL of your identity provider's JSON Web Key Set endpoint (e.g. https://auth.company.com/.well-known/jwks.json). Used to verify JWT signatures at runtime. Leave blank to set via environment variable later."
       default: ""
   templates:
     - internal/infrastructure/auth/jwt.go.tmpl

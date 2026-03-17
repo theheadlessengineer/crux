@@ -13,19 +13,23 @@ spec:
     - id: kafka_direction
       type: select
       prompt: "Kafka usage direction?"
+      help: "Determines which client stubs are generated. producer emits events, consumer reads them, both generates full producer+consumer scaffolding."
       options: ["producer", "consumer", "both"]
       default: "both"
     - id: kafka_dlq
       type: confirm
       prompt: "Enable Dead Letter Queue (DLQ)?"
+      help: "Generates a DLQ topic and retry handler. Failed messages are routed to the DLQ after the configured retry limit, preventing consumer stalls."
       default: "true"
     - id: kafka_outbox
       type: confirm
       prompt: "Enable transactional outbox pattern?"
+      help: "Generates an outbox table and relay worker to guarantee at-least-once event delivery alongside database writes, eliminating dual-write inconsistencies."
       default: "false"
     - id: kafka_schema_format
       type: select
       prompt: "Message schema format?"
+      help: "The serialisation format for Kafka messages. json requires no registry; avro and protobuf use the schema registry for schema evolution and compatibility enforcement."
       options: ["json", "avro", "protobuf"]
       default: "json"
   templates:

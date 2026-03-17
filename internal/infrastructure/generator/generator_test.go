@@ -154,3 +154,185 @@ func TestGenerate_ErrorOnInvalidOutputDir(t *testing.T) {
 	err := generator.Generate(context.Background(), cfgPtr(), "/nonexistent/path/that/does/not/exist")
 	assert.Error(t, err)
 }
+
+// ── Multi-language tests ──────────────────────────────────────────────────────
+
+func TestGenerate_PythonFastAPI_CoreFiles(t *testing.T) {
+	outDir := t.TempDir()
+	c := generator.Config{
+		ServiceName: "order-service",
+		Language:    "python",
+		Framework:   "fastapi",
+		Team:        "orders",
+		CLIVersion:  "1.0.0",
+		GeneratedAt: time.Date(2026, 3, 16, 12, 0, 0, 0, time.UTC),
+	}
+	require.NoError(t, generator.Generate(context.Background(), &c, outDir))
+
+	required := []string{
+		"main.py",
+		"app/config.py",
+		"app/health.py",
+		"app/logging_config.py",
+		"app/middleware.py",
+		"requirements.txt",
+		"Makefile",
+		"Dockerfile",
+		".github/workflows/ci.yaml",
+		// Shared Tier 1 files
+		"resilience.yaml",
+		"slo.yaml",
+		"infra/kubernetes/deployment.yaml",
+		"infra/monitoring/alerts.yaml",
+		"compliance/catalog-entry.yaml",
+		"docs/runbook.md",
+		"docs/TODO.md",
+	}
+	for _, rel := range required {
+		assert.FileExists(t, filepath.Join(outDir, rel), "python: missing %s", rel)
+	}
+}
+
+func TestGenerate_PythonFastAPI_DockerfileNonRoot(t *testing.T) {
+	outDir := t.TempDir()
+	c := generator.Config{ServiceName: "svc", Language: "python", CLIVersion: "1.0.0"}
+	require.NoError(t, generator.Generate(context.Background(), &c, outDir))
+
+	dockerfile, err := os.ReadFile(filepath.Join(outDir, "Dockerfile"))
+	require.NoError(t, err)
+	assert.Contains(t, string(dockerfile), "nonroot")
+	assert.Contains(t, string(dockerfile), "USER nonroot")
+}
+
+func TestGenerate_JavaSpring_CoreFiles(t *testing.T) {
+	outDir := t.TempDir()
+	c := generator.Config{
+		ServiceName: "user-service",
+		Language:    "java",
+		Framework:   "spring",
+		Team:        "identity",
+		CLIVersion:  "1.0.0",
+		GeneratedAt: time.Date(2026, 3, 16, 12, 0, 0, 0, time.UTC),
+	}
+	require.NoError(t, generator.Generate(context.Background(), &c, outDir))
+
+	required := []string{
+		"src/main/java/Application.java",
+		"src/main/java/health/HealthController.java",
+		"src/main/resources/application.yaml",
+		"pom.xml",
+		"Makefile",
+		"Dockerfile",
+		".github/workflows/ci.yaml",
+		// Shared Tier 1 files
+		"resilience.yaml",
+		"slo.yaml",
+		"infra/kubernetes/deployment.yaml",
+		"infra/monitoring/alerts.yaml",
+		"compliance/catalog-entry.yaml",
+		"docs/runbook.md",
+		"docs/TODO.md",
+	}
+	for _, rel := range required {
+		assert.FileExists(t, filepath.Join(outDir, rel), "java: missing %s", rel)
+	}
+}
+
+func TestGenerate_JavaSpring_DockerfileNonRoot(t *testing.T) {
+	outDir := t.TempDir()
+	c := generator.Config{ServiceName: "svc", Language: "java", CLIVersion: "1.0.0"}
+	require.NoError(t, generator.Generate(context.Background(), &c, outDir))
+
+	dockerfile, err := os.ReadFile(filepath.Join(outDir, "Dockerfile"))
+	require.NoError(t, err)
+	assert.Contains(t, string(dockerfile), "nonroot")
+}
+
+func TestGenerate_NodeExpress_CoreFiles(t *testing.T) {
+	outDir := t.TempDir()
+	c := generator.Config{
+		ServiceName: "notification-service",
+		Language:    "node",
+		Framework:   "express",
+		Team:        "comms",
+		CLIVersion:  "1.0.0",
+		GeneratedAt: time.Date(2026, 3, 16, 12, 0, 0, 0, time.UTC),
+	}
+	require.NoError(t, generator.Generate(context.Background(), &c, outDir))
+
+	required := []string{
+		"index.js",
+		"src/app.js",
+		"src/health.js",
+		"src/logging.js",
+		"src/middleware.js",
+		"package.json",
+		"Makefile",
+		"Dockerfile",
+		".github/workflows/ci.yaml",
+		// Shared Tier 1 files
+		"resilience.yaml",
+		"slo.yaml",
+		"infra/kubernetes/deployment.yaml",
+		"infra/monitoring/alerts.yaml",
+		"compliance/catalog-entry.yaml",
+		"docs/runbook.md",
+		"docs/TODO.md",
+	}
+	for _, rel := range required {
+		assert.FileExists(t, filepath.Join(outDir, rel), "node: missing %s", rel)
+	}
+}
+
+func TestGenerate_NodeExpress_DockerfileNonRoot(t *testing.T) {
+	outDir := t.TempDir()
+	c := generator.Config{ServiceName: "svc", Language: "node", CLIVersion: "1.0.0"}
+	require.NoError(t, generator.Generate(context.Background(), &c, outDir))
+
+	dockerfile, err := os.ReadFile(filepath.Join(outDir, "Dockerfile"))
+	require.NoError(t, err)
+	assert.Contains(t, string(dockerfile), "nonroot")
+}
+
+func TestGenerate_AllLanguages_HealthEndpointsPresent(t *testing.T) {
+	cases := []struct {
+		language string
+		file     string
+		contains string
+	}{
+		{"go", "internal/presentation/http/health.go", "/health"},
+		{"python", "app/health.py", "/health"},
+		{"java", "src/main/java/health/HealthController.java", "/health"},
+		{"node", "src/health.js", "/health"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.language, func(t *testing.T) {
+			outDir := t.TempDir()
+			c := generator.Config{ServiceName: "svc", Language: tc.language, CLIVersion: "1.0.0"}
+			require.NoError(t, generator.Generate(context.Background(), &c, outDir))
+			content, err := os.ReadFile(filepath.Join(outDir, tc.file))
+			require.NoError(t, err)
+			assert.Contains(t, string(content), tc.contains)
+		})
+	}
+}
+
+func TestGenerate_AllLanguages_SecurityHeadersPresent(t *testing.T) {
+	cases := []struct {
+		language string
+		file     string
+	}{
+		{"go", "internal/presentation/http/router.go"},
+		{"python", "app/middleware.py"},
+		{"java", "src/main/resources/application.yaml"},
+		{"node", "src/middleware.js"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.language, func(t *testing.T) {
+			outDir := t.TempDir()
+			c := generator.Config{ServiceName: "svc", Language: tc.language, CLIVersion: "1.0.0"}
+			require.NoError(t, generator.Generate(context.Background(), &c, outDir))
+			assert.FileExists(t, filepath.Join(outDir, tc.file))
+		})
+	}
+}

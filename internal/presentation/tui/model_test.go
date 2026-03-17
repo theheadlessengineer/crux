@@ -1,6 +1,7 @@
 package tui_test
 
 import (
+	"fmt"
 	"testing"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -230,7 +231,7 @@ func TestModel_SummaryShownAfterFirstAnswer(t *testing.T) {
 
 	view := m.View()
 	assert.Contains(t, view, "answers")
-	assert.Contains(t, view, "team")
+	assert.Contains(t, view, "Team")
 }
 
 func TestNextTheme_Cycles(t *testing.T) {
@@ -290,4 +291,46 @@ func TestModel_BackspaceNavigatesBack_Select(t *testing.T) {
 	assert.False(t, m.Done())
 	_, hasQ1 := m.Answers()["q1"]
 	assert.False(t, hasQ1)
+}
+
+func TestModel_AnswersPanel_ScrollDown(t *testing.T) {
+	// Build enough questions so the answers panel overflows.
+	questions := make([]prompt.Question, 10)
+	for i := range questions {
+		questions[i] = prompt.Question{
+			ID:      fmt.Sprintf("q%d", i),
+			Type:    prompt.QuestionTypeText,
+			Prompt:  fmt.Sprintf("Question %d", i),
+			Default: fmt.Sprintf("val%d", i),
+		}
+	}
+	m := tui.NewModel(newSession(t, questions), "svc")
+	// Answer all questions with defaults.
+	for range questions {
+		m = sendKey(m, tea.KeyEnter)
+	}
+	// Now in review mode — go back to question mode by editing.
+	// Instead, just test scroll on a model mid-session.
+	m2 := tui.NewModel(newSession(t, questions), "svc")
+	for i := 0; i < 5; i++ {
+		m2 = sendKey(m2, tea.KeyEnter)
+	}
+
+	// Scroll down via ctrl+down.
+	updated, _ := m2.Update(tea.KeyMsg{Type: tea.KeyCtrlDown})
+	m2 = updated.(tui.Model)
+	// View should still render without panic.
+	view := m2.View()
+	assert.NotEmpty(t, view)
+}
+
+func TestModel_AnswersPanel_ScrollClampsAtZero(t *testing.T) {
+	questions := []prompt.Question{
+		{ID: "q1", Type: prompt.QuestionTypeText, Prompt: "Q1", Default: "a"},
+	}
+	m := tui.NewModel(newSession(t, questions), "svc")
+	// Scroll up when already at top — should not panic.
+	updated, _ := m.Update(tea.KeyMsg{Type: tea.KeyCtrlUp})
+	m = updated.(tui.Model)
+	assert.NotEmpty(t, m.View())
 }

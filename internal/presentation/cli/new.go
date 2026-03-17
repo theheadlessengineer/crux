@@ -123,6 +123,20 @@ func newNewCommand(_ *config.GlobalConfig, cruxVersion string) *cobra.Command {
 func coreQuestions() []prompt.Question {
 	return []prompt.Question{
 		{
+			ID:     "language",
+			Type:   prompt.QuestionTypeSelect,
+			Prompt: "Language + Framework",
+			Help: "The programming language and framework for this service. " +
+				"All Tier 1 standards are generated for every language.",
+			Options: []prompt.Option{
+				{Label: "Go + Gin", Value: "go"},
+				{Label: "Python + FastAPI", Value: "python"},
+				{Label: "Java + Spring Boot", Value: "java"},
+				{Label: "Node.js + Express", Value: "node"},
+			},
+			Default: "go",
+		},
+		{
 			ID:      "team",
 			Type:    prompt.QuestionTypeText,
 			Prompt:  "Team name",
@@ -173,25 +187,44 @@ func loadAvailablePlugins(cruxVersion string) ([]*plugin.Plugin, error) {
 }
 
 // pluginQuestionToPrompt converts a plugin QuestionSpec to a prompt.Question.
-func pluginQuestionToPrompt(qs *plugin.QuestionSpec, pluginName string) prompt.Question {
+// language is the value of the "language" answer (e.g. "go", "python", "java", "node").
+// If the spec declares options_by_language, those override the generic options for the
+// selected language. Same for default_by_language.
+func pluginQuestionToPrompt(qs *plugin.QuestionSpec, pluginName, language string) prompt.Question {
 	q := prompt.Question{
 		ID:      pluginName + "." + qs.ID,
 		Prompt:  qs.Prompt,
 		Help:    qs.Help,
 		Default: qs.Default,
 	}
+
+	// Resolve language-specific default.
+	if language != "" && len(qs.DefaultByLang) > 0 {
+		if d, ok := qs.DefaultByLang[language]; ok {
+			q.Default = d
+		}
+	}
+
+	// Resolve language-specific options.
+	rawOptions := qs.Options
+	if language != "" && len(qs.OptionsByLang) > 0 {
+		if langOpts, ok := qs.OptionsByLang[language]; ok {
+			rawOptions = langOpts
+		}
+	}
+
 	switch qs.Type {
 	case "confirm":
 		q.Type = prompt.QuestionTypeConfirm
 	case "select":
 		q.Type = prompt.QuestionTypeSelect
-		q.Options = make([]prompt.Option, len(qs.Options))
-		for i, o := range qs.Options {
+		q.Options = make([]prompt.Option, len(rawOptions))
+		for i, o := range rawOptions {
 			q.Options[i] = prompt.Option{Label: o, Value: o}
 		}
 	case "number":
 		q.Type = prompt.QuestionTypeNumber
-	default: // "input", "text", or anything else
+	default:
 		q.Type = prompt.QuestionTypeText
 	}
 	return q
@@ -208,6 +241,19 @@ func runPrompt(
 	}
 
 	questions := coreQuestions()
+
+	// Determine language from a pre-scan of the config file or default to "go".
+	// At prompt time the language answer isn't known yet, so we use a sentinel
+	// and resolve per-question options dynamically via a two-pass approach:
+	// the language question is always first in coreQuestions(), so we build the
+	// full question list with a placeholder language and re-resolve after the
+	// session collects the language answer.
+	//
+	// Simpler approach: build questions with all language variants embedded as
+	// separate conditional questions, one per language per option set.
+	// We use the DependsOn mechanism: for each plugin question that has
+	// options_by_language, we emit one question per language variant, each
+	// gated on language == <lang>. Only the matching one will be visible.
 
 	pluginMap := make(map[string]*plugin.Plugin, len(allPlugins))
 	if len(allPlugins) > 0 {
@@ -230,14 +276,31 @@ func runPrompt(
 		}
 		questions = append(questions, selQ)
 
-		// Append each plugin's questions gated on _plugins containing that plugin's name.
+		// For each plugin question, emit language-aware variants.
 		for _, p := range allPlugins {
 			for i := range p.Manifest.Spec.Questions {
-				q := pluginQuestionToPrompt(&p.Manifest.Spec.Questions[i], p.Manifest.Metadata.Name)
-				q.DependsOn = &prompt.DependsOn{
+				qs := &p.Manifest.Spec.Questions[i]
+				pluginGate := prompt.DependsOn{
 					And: []prompt.Condition{{QuestionID: "_plugins", Value: p.Manifest.Metadata.Name}},
 				}
-				questions = append(questions, q)
+
+				if len(qs.OptionsByLang) > 0 {
+					// Emit one question per language variant, each gated on language == <lang>.
+					for _, lang := range []string{"go", "python", "java", "node"} {
+						q := pluginQuestionToPrompt(qs, p.Manifest.Metadata.Name, lang)
+						// Suffix the ID so each variant is unique in the graph.
+						q.ID = q.ID + "." + lang
+						q.DependsOn = &prompt.DependsOn{
+							And: append(pluginGate.And, prompt.Condition{QuestionID: "language", Value: lang}),
+						}
+						questions = append(questions, q)
+					}
+				} else {
+					// No language-specific options — single question gated on plugin selection only.
+					q := pluginQuestionToPrompt(qs, p.Manifest.Metadata.Name, "")
+					q.DependsOn = &pluginGate
+					questions = append(questions, q)
+				}
 			}
 		}
 	}
@@ -383,6 +446,12 @@ func buildGeneratorConfig(
 		}
 	}
 	if answers != nil {
+		if a, ok := answers["language"]; ok {
+			if lang, _ := a.Value.(string); lang != "" {
+				cfg.Language = lang
+				cfg.Framework = defaultFramework(lang)
+			}
+		}
 		if a, ok := answers["team"]; ok {
 			cfg.Team, _ = a.Value.(string)
 		}
@@ -393,6 +462,20 @@ func buildGeneratorConfig(
 		}
 	}
 	return cfg
+}
+
+// defaultFramework returns the canonical framework name for a given language selection.
+func defaultFramework(language string) string {
+	switch language {
+	case "python":
+		return "fastapi"
+	case "java":
+		return "spring"
+	case "node":
+		return "express"
+	default:
+		return "gin"
+	}
 }
 
 func buildSkeleton(

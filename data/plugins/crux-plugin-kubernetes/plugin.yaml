@@ -13,20 +13,24 @@ spec:
     - id: k8s_deployment_strategy
       type: select
       prompt: "Deployment strategy?"
+      help: "rolling replaces pods incrementally with zero downtime; recreate terminates all pods before starting new ones (causes brief downtime); canary generates a secondary Deployment for gradual traffic shifting."
       options: ["rolling", "recreate", "canary"]
       default: "rolling"
     - id: k8s_service_mesh
       type: select
       prompt: "Service mesh?"
+      help: "Injects a sidecar proxy for mTLS, traffic management, and observability. none skips sidecar injection. Choose the mesh already running in your cluster."
       options: ["none", "istio", "linkerd"]
       default: "none"
     - id: k8s_min_replicas
       type: input
       prompt: "Minimum replica count?"
+      help: "The floor for the Horizontal Pod Autoscaler. Must be ≥ 2 for high-availability. The HPA will never scale below this value."
       default: "2"
     - id: k8s_max_replicas
       type: input
       prompt: "Maximum replica count (HPA)?"
+      help: "The ceiling for the Horizontal Pod Autoscaler. Set this based on your cluster capacity and cost budget. The HPA will never scale above this value."
       default: "10"
   templates:
     - kubernetes/deployment.yaml.tmpl
