@@ -1,0 +1,35 @@
+apiVersion: crux/v1
+kind: Plugin
+metadata:
+  name: crux-plugin-multitenant
+  version: 1.0.0
+  description: Multi-tenancy context propagation — tenant extraction, cache namespacing, per-tenant rate limiting
+  author: Platform Engineering
+  trustTier: 1
+  tags: [multi-tenancy, tenant, rate-limiting, context]
+  cruxVersionConstraint: ">=1.0.0"
+spec:
+  questions:
+    - id: mt_isolation_model
+      type: select
+      prompt: "Tenant isolation model?"
+      help: "schema creates a separate PostgreSQL schema per tenant (high isolation, higher complexity); row adds a tenant_id column to all tables with row-level security (simpler, lower isolation); silo provisions separate infrastructure per tenant (complete isolation, highest cost)."
+      options: ["schema", "row", "silo"]
+      default: "row"
+    - id: mt_tenant_header
+      type: input
+      prompt: "Tenant ID header name?"
+      help: "The HTTP header used to carry the tenant identifier on inbound requests. X-Tenant-ID is the standard. Must match your API gateway configuration."
+      default: "X-Tenant-ID"
+    - id: mt_rate_limit_rps
+      type: input
+      prompt: "Per-tenant rate limit (requests/second)?"
+      help: "Maximum requests per second allowed per tenant. Requests exceeding this limit receive 429. Set to 0 to disable per-tenant rate limiting."
+      default: "100"
+  templates:
+    - internal/infrastructure/tenancy/context.go.tmpl
+    - internal/infrastructure/tenancy/middleware.go.tmpl
+  hooks:
+    preGenerate: []
+    postGenerate: []
+  dependencies: []

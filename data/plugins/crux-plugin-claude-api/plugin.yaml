@@ -1,0 +1,35 @@
+apiVersion: crux/v1
+kind: Plugin
+metadata:
+  name: crux-plugin-claude-api
+  version: 1.0.0
+  description: Anthropic Claude API client with PII scrubbing, cost circuit breaker, and audit logging
+  author: Platform Engineering
+  trustTier: 1
+  tags: [ai, claude, anthropic, ai-client, safety]
+  cruxVersionConstraint: ">=1.0.0"
+spec:
+  questions:
+    - id: claude_model
+      type: select
+      prompt: "Default Claude model?"
+      help: "The Anthropic model used for API calls. claude-3-5-sonnet is the recommended balance of capability and cost. claude-3-haiku is faster and cheaper for high-volume use cases."
+      options: ["claude-3-5-sonnet-20241022", "claude-3-haiku-20240307", "claude-3-opus-20240229"]
+      default: "claude-3-5-sonnet-20241022"
+    - id: claude_daily_budget_usd
+      type: input
+      prompt: "Daily API spend budget (USD)?"
+      help: "The circuit breaker opens when estimated daily spend exceeds this value. All API calls return a fallback response until midnight UTC resets the counter."
+      default: "50"
+    - id: claude_max_tokens
+      type: input
+      prompt: "Default max tokens per response?"
+      help: "The maximum number of tokens in each API response. Higher values increase cost and latency. 1024 is a safe default for most use cases."
+      default: "1024"
+  templates:
+    - internal/infrastructure/ai/claude/client.go.tmpl
+    - internal/infrastructure/ai/claude/pii_scrubber.go.tmpl
+  hooks:
+    preGenerate: []
+    postGenerate: []
+  dependencies: []

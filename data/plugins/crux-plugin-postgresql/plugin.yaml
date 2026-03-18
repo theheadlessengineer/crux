@@ -46,6 +46,13 @@ spec:
   templates:
     - internal/infrastructure/postgres/postgres.go.tmpl
     - internal/infrastructure/postgres/health.go.tmpl
+  templates_by_language:
+    python:
+      - app/db/postgres.py.tmpl
+    java:
+      - src/main/java/infrastructure/postgres/PostgresConfig.java.tmpl
+    node:
+      - src/db/postgres.js.tmpl
   hooks:
     preGenerate: []
     postGenerate: []

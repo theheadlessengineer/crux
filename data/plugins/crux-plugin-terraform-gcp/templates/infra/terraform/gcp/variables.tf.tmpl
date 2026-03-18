@@ -1,0 +1,22 @@
+variable "project_id" {
+  description = "GCP project ID"
+  type        = string
+  default     = "{{ .gcp_project_id }}"
+}
+
+variable "region" {
+  description = "Primary GCP region"
+  type        = string
+  default     = "{{ .gcp_region }}"
+}
+
+variable "service_name" {
+  description = "Service name for resource labelling"
+  type        = string
+  default     = "{{ .service.name }}"
+}
+
+variable "environment" {
+  description = "Deployment environment"
+  type        = string
+}

@@ -1,0 +1,28 @@
+variable "subscription_id" {
+  description = "Azure subscription ID"
+  type        = string
+  default     = "{{ .azure_subscription_id }}"
+}
+
+variable "location" {
+  description = "Primary Azure location"
+  type        = string
+  default     = "{{ .azure_location }}"
+}
+
+variable "resource_group" {
+  description = "Azure resource group name"
+  type        = string
+  default     = "{{ .service.name }}-rg"
+}
+
+variable "service_name" {
+  description = "Service name for resource tagging"
+  type        = string
+  default     = "{{ .service.name }}"
+}
+
+variable "environment" {
+  description = "Deployment environment"
+  type        = string
+}

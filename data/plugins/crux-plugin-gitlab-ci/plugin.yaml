@@ -1,0 +1,34 @@
+apiVersion: crux/v1
+kind: Plugin
+metadata:
+  name: crux-plugin-gitlab-ci
+  version: 1.0.0
+  description: GitLab CI/CD pipeline — lint, test, build, SAST, container scan, deploy
+  author: Platform Engineering
+  trustTier: 1
+  tags: [ci-cd, gitlab, pipeline]
+  cruxVersionConstraint: ">=1.0.0"
+spec:
+  questions:
+    - id: gitlab_coverage_threshold
+      type: input
+      prompt: "Minimum test coverage threshold (%)?"
+      help: "The pipeline fails if test coverage falls below this percentage. 80% is the organisation minimum. Set higher for critical services."
+      default: "80"
+    - id: gitlab_container_registry
+      type: input
+      prompt: "Container registry URL?"
+      help: "The GitLab container registry URL where built images are pushed. Typically registry.gitlab.com/<group>/<project>."
+      default: "registry.gitlab.com/company/{{ .service.name }}"
+    - id: gitlab_deploy_env
+      type: select
+      prompt: "Auto-deploy to which environment?"
+      help: "The environment that receives automatic deployments on merge to main. staging is the standard. prod requires manual approval."
+      options: ["staging", "prod", "none"]
+      default: "staging"
+  templates:
+    - .gitlab-ci.yml.tmpl
+  hooks:
+    preGenerate: []
+    postGenerate: []
+  dependencies: []

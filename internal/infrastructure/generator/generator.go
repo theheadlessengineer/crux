@@ -5,13 +5,23 @@ package generator
 import (
 	"context"
 	"fmt"
+	"io/fs"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
+	dataplugins "github.com/theheadlessengineer/crux/data/plugins"
 	domain "github.com/theheadlessengineer/crux/internal/domain/template"
 	infratemplate "github.com/theheadlessengineer/crux/internal/infrastructure/template"
 )
+
+// SelectedPlugin carries the name and language-resolved template list for a
+// plugin the user selected during `crux new`.
+type SelectedPlugin struct {
+	Name      string
+	Templates []string // resolved for the chosen language
+}
 
 // Config holds all inputs required to generate a service skeleton.
 type Config struct {
@@ -22,6 +32,8 @@ type Config struct {
 	Team        string
 	CLIVersion  string
 	GeneratedAt time.Time
+	Plugins     []SelectedPlugin
+	Answers     map[string]any
 }
 
 // Generate renders all templates for the given config into outputDir.
@@ -33,13 +45,17 @@ func Generate(ctx context.Context, cfg *Config, outputDir string) error {
 
 	data := buildTemplateData(cfg)
 
-	fm := fileMap(cfg)
-
-	for tmplName, relPath := range fm {
+	// Render core language templates.
+	for tmplName, relPath := range fileMap(cfg) {
 		outPath := filepath.Join(outputDir, relPath)
 		if err := eng.Render(tmplName, data, outPath); err != nil {
 			return fmt.Errorf("render %s: %w", tmplName, err)
 		}
+	}
+
+	// Render plugin templates.
+	if err := renderPlugins(eng, cfg, data, outputDir); err != nil {
+		return err
 	}
 
 	// Create empty-directory stubs (gitkeep files) for directories that have
@@ -51,6 +67,38 @@ func Generate(ctx context.Context, cfg *Config, outputDir string) error {
 	}
 
 	_ = ctx
+	return nil
+}
+
+// renderPlugins loads each selected plugin's templates from the embedded FS
+// and renders them into outputDir.
+func renderPlugins(eng domain.Engine, cfg *Config, data *domain.TemplateData, outputDir string) error {
+	if len(cfg.Plugins) == 0 {
+		return nil
+	}
+
+	for _, sel := range cfg.Plugins {
+		if len(sel.Templates) == 0 {
+			continue
+		}
+
+		// Sub-FS rooted at the plugin's templates/ directory.
+		pluginFS, err := fs.Sub(dataplugins.FS, sel.Name+"/templates")
+		if err != nil {
+			return fmt.Errorf("plugin %s: open templates fs: %w", sel.Name, err)
+		}
+
+		if err := eng.AddFromFS(pluginFS); err != nil {
+			return fmt.Errorf("plugin %s: load templates: %w", sel.Name, err)
+		}
+
+		for _, tmplPath := range sel.Templates {
+			outPath := filepath.Join(outputDir, strings.TrimSuffix(tmplPath, ".tmpl"))
+			if err := eng.Render(tmplPath, data, outPath); err != nil {
+				return fmt.Errorf("plugin %s: render %s: %w", sel.Name, tmplPath, err)
+			}
+		}
+	}
 	return nil
 }
 
@@ -221,6 +269,10 @@ func buildTemplateData(cfg *Config) *domain.TemplateData {
 	if generatedAt.IsZero() {
 		generatedAt = time.Now().UTC()
 	}
+	answers := cfg.Answers
+	if answers == nil {
+		answers = map[string]any{}
+	}
 	return &domain.TemplateData{
 		Service: domain.ServiceData{
 			Name:      cfg.ServiceName,
@@ -262,7 +314,7 @@ func buildTemplateData(cfg *Config) *domain.TemplateData {
 			GeneratedAt: generatedAt.Format(time.RFC3339),
 		},
 		Plugins: []string{},
-		Answers: map[string]any{},
+		Answers: answers,
 	}
 }
 

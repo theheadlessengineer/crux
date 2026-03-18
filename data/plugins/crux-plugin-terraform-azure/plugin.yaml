@@ -1,0 +1,37 @@
+apiVersion: crux/v1
+kind: Plugin
+metadata:
+  name: crux-plugin-terraform-azure
+  version: 1.0.0
+  description: Terraform Azure infrastructure — Azure Database, Redis Cache, Service Bus, and IAM modules
+  author: Platform Engineering
+  trustTier: 1
+  tags: [terraform, azure, iac, azure-database, redis-cache, service-bus]
+  cruxVersionConstraint: ">=1.0.0"
+spec:
+  questions:
+    - id: azure_subscription_id
+      type: input
+      prompt: "Azure subscription ID?"
+      help: "The Azure subscription where all infrastructure is provisioned. Use the subscription ID (UUID format)."
+      default: "00000000-0000-0000-0000-000000000000"
+    - id: azure_location
+      type: select
+      prompt: "Primary Azure location?"
+      help: "The Azure region where all infrastructure modules are provisioned by default."
+      options: ["westeurope", "northeurope", "eastus", "eastus2", "southeastasia"]
+      default: "westeurope"
+    - id: azure_remote_state_storage_account
+      type: input
+      prompt: "Terraform remote state Azure Storage Account name?"
+      help: "The Azure Storage Account used to store Terraform state files. Must already exist with blob versioning enabled."
+      default: "companyterraformstate"
+  templates:
+    - infra/terraform/azure/main.tf.tmpl
+    - infra/terraform/azure/variables.tf.tmpl
+    - infra/terraform/azure/outputs.tf.tmpl
+    - infra/terraform/azure/backend.tf.tmpl
+  hooks:
+    preGenerate: []
+    postGenerate: []
+  dependencies: []

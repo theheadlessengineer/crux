@@ -1,0 +1,7 @@
+terraform {
+  backend "azurerm" {
+    storage_account_name = "{{ .azure_remote_state_storage_account }}"
+    container_name       = "tfstate"
+    key                  = "{{ .service.name }}.terraform.tfstate"
+  }
+}

@@ -23,6 +23,13 @@ spec:
       default: ""
   templates:
     - internal/infrastructure/auth/jwt.go.tmpl
+  templates_by_language:
+    python:
+      - app/auth/jwt.py.tmpl
+    java:
+      - src/main/java/infrastructure/auth/JwtFilter.java.tmpl
+    node:
+      - src/auth/jwt.js.tmpl
   hooks:
     preGenerate: []
     postGenerate: []

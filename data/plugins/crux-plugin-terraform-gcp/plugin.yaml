@@ -1,0 +1,37 @@
+apiVersion: crux/v1
+kind: Plugin
+metadata:
+  name: crux-plugin-terraform-gcp
+  version: 1.0.0
+  description: Terraform GCP infrastructure — Cloud SQL, Memorystore, Pub/Sub, and IAM modules
+  author: Platform Engineering
+  trustTier: 1
+  tags: [terraform, gcp, iac, cloud-sql, memorystore, pubsub]
+  cruxVersionConstraint: ">=1.0.0"
+spec:
+  questions:
+    - id: gcp_project_id
+      type: input
+      prompt: "GCP project ID?"
+      help: "The GCP project where all infrastructure is provisioned. Must already exist. Use the project ID (not the project name or number)."
+      default: "company-project"
+    - id: gcp_region
+      type: select
+      prompt: "Primary GCP region?"
+      help: "The GCP region where all infrastructure modules are provisioned by default."
+      options: ["europe-west1", "europe-west4", "us-central1", "us-east1", "asia-southeast1"]
+      default: "europe-west1"
+    - id: gcp_remote_state_bucket
+      type: input
+      prompt: "Terraform remote state GCS bucket name?"
+      help: "The GCS bucket used to store Terraform state files. Must already exist with versioning enabled."
+      default: "company-terraform-state"
+  templates:
+    - infra/terraform/gcp/main.tf.tmpl
+    - infra/terraform/gcp/variables.tf.tmpl
+    - infra/terraform/gcp/outputs.tf.tmpl
+    - infra/terraform/gcp/backend.tf.tmpl
+  hooks:
+    preGenerate: []
+    postGenerate: []
+  dependencies: []

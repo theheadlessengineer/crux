@@ -54,10 +54,22 @@ type Metadata struct {
 
 // Spec holds the capability declarations from plugin.yaml.
 type Spec struct {
-	Questions    []QuestionSpec `yaml:"questions,omitempty"`
-	Templates    []string       `yaml:"templates,omitempty"`
-	Hooks        HooksSpec      `yaml:"hooks,omitempty"`
-	Dependencies []string       `yaml:"dependencies,omitempty"`
+	Questions       []QuestionSpec      `yaml:"questions,omitempty"`
+	Templates       []string            `yaml:"templates,omitempty"`
+	TemplatesByLang map[string][]string `yaml:"templates_by_language,omitempty"`
+	Hooks           HooksSpec           `yaml:"hooks,omitempty"`
+	Dependencies    []string            `yaml:"dependencies,omitempty"`
+}
+
+// TemplatesForLang returns the template list for the given language.
+// Falls back to the generic Templates list if no language-specific list is declared.
+func (s *Spec) TemplatesForLang(language string) []string {
+	if len(s.TemplatesByLang) > 0 {
+		if tmpl, ok := s.TemplatesByLang[language]; ok {
+			return tmpl
+		}
+	}
+	return s.Templates
 }
 
 // Manifest is the parsed, validated representation of a plugin.yaml file.

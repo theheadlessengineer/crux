@@ -1,0 +1,28 @@
+apiVersion: crux/v1
+kind: Plugin
+metadata:
+  name: crux-plugin-github-copilot
+  version: 1.0.0
+  description: GitHub Copilot workspace instructions — company standards and service context
+  author: Platform Engineering
+  trustTier: 1
+  tags: [ai, github-copilot, coding-assistant, developer-experience]
+  cruxVersionConstraint: ">=1.0.0"
+spec:
+  questions:
+    - id: copilot_team_name
+      type: input
+      prompt: "Team name (for Copilot instructions context)?"
+      help: "Written into .github/copilot-instructions.md so Copilot understands the team context when suggesting code."
+      default: "Platform Engineering"
+    - id: copilot_no_touch_paths
+      type: input
+      prompt: "Comma-separated paths Copilot must not modify (e.g. infra/terraform)?"
+      help: "Paths added to the Copilot instructions no-touch list. Useful for protecting generated IaC, CI pipelines, or compliance-sensitive files."
+      default: "infra/terraform,.github/workflows"
+  templates:
+    - .github/copilot-instructions.md.tmpl
+  hooks:
+    preGenerate: []
+    postGenerate: []
+  dependencies: []

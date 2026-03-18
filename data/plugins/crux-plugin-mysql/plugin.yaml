@@ -1,0 +1,46 @@
+apiVersion: crux/v1
+kind: Plugin
+metadata:
+  name: crux-plugin-mysql
+  version: 1.0.0
+  description: MySQL integration with connection pooling, migrations, and health check
+  author: Platform Engineering
+  trustTier: 1
+  tags: [database, mysql, migrations]
+  cruxVersionConstraint: ">=1.0.0"
+spec:
+  questions:
+    - id: mysql_version
+      type: select
+      prompt: "Which MySQL version?"
+      help: "The MySQL major version to target. 8.0 is the current LTS recommendation. 8.4 is the latest LTS; choose 5.7 only if your managed database provider does not yet support 8.x."
+      options: ["5.7", "8.0", "8.4"]
+      default: "8.0"
+    - id: mysql_migration_tool
+      type: select
+      prompt: "Database migration tool?"
+      help: "The tool used to manage schema migrations. flyway is the most widely used for MySQL; goose is idiomatic for Go services."
+      options: ["flyway", "goose", "migrate"]
+      default: "goose"
+      options_by_language:
+        go: ["goose", "migrate", "flyway"]
+        python: ["alembic", "flyway"]
+        java: ["flyway", "liquibase"]
+        node: ["db-migrate", "knex", "flyway"]
+      default_by_language:
+        go: "goose"
+        python: "alembic"
+        java: "flyway"
+        node: "db-migrate"
+    - id: mysql_tls
+      type: confirm
+      prompt: "Enable TLS for MySQL connections?"
+      help: "Enforces TLS on all connections to the MySQL server. Required for production deployments and compliance profiles. Requires a valid CA certificate."
+      default: "true"
+  templates:
+    - internal/infrastructure/mysql/mysql.go.tmpl
+    - internal/infrastructure/mysql/health.go.tmpl
+  hooks:
+    preGenerate: []
+    postGenerate: []
+  dependencies: []

@@ -1,0 +1,9 @@
+output "database_server_fqdn" {
+  description = "Azure Database server FQDN"
+  value       = module.azure_database.server_fqdn
+}
+
+output "redis_hostname" {
+  description = "Azure Redis Cache hostname"
+  value       = module.redis_cache.hostname
+}

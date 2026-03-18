@@ -1,0 +1,35 @@
+apiVersion: crux/v1
+kind: Plugin
+metadata:
+  name: crux-plugin-openai
+  version: 1.0.0
+  description: OpenAI API client with PII scrubbing, cost circuit breaker, and audit logging
+  author: Platform Engineering
+  trustTier: 2
+  tags: [ai, openai, gpt, ai-client, safety]
+  cruxVersionConstraint: ">=1.0.0"
+spec:
+  questions:
+    - id: openai_model
+      type: select
+      prompt: "Default OpenAI model?"
+      help: "The OpenAI model used for API calls. gpt-4o is the recommended balance of capability and cost. gpt-4o-mini is faster and cheaper for high-volume use cases."
+      options: ["gpt-4o", "gpt-4o-mini", "gpt-4-turbo"]
+      default: "gpt-4o"
+    - id: openai_daily_budget_usd
+      type: input
+      prompt: "Daily API spend budget (USD)?"
+      help: "The circuit breaker opens when estimated daily spend exceeds this value. All API calls return a fallback response until midnight UTC resets the counter."
+      default: "50"
+    - id: openai_max_tokens
+      type: input
+      prompt: "Default max tokens per response?"
+      help: "The maximum number of tokens in each API response. 1024 is a safe default for most use cases."
+      default: "1024"
+  templates:
+    - internal/infrastructure/ai/openai/client.go.tmpl
+    - internal/infrastructure/ai/openai/pii_scrubber.go.tmpl
+  hooks:
+    preGenerate: []
+    postGenerate: []
+  dependencies: []

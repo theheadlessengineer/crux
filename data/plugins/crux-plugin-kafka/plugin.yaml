@@ -35,6 +35,13 @@ spec:
   templates:
     - internal/infrastructure/kafka/kafka.go.tmpl
     - internal/infrastructure/kafka/health.go.tmpl
+  templates_by_language:
+    python:
+      - app/messaging/kafka.py.tmpl
+    java:
+      - src/main/java/infrastructure/kafka/KafkaConfig.java.tmpl
+    node:
+      - src/messaging/kafka.js.tmpl
   hooks:
     preGenerate: []
     postGenerate: []

@@ -92,7 +92,7 @@ func newNewCommand(_ *config.GlobalConfig, cruxVersion string) *cobra.Command {
 				return fmt.Errorf("create output directory %q: %w", outDir, err)
 			}
 
-			genCfg := buildGeneratorConfig(name, cruxVersion, fileCfg, answers)
+			genCfg := buildGeneratorConfig(name, cruxVersion, fileCfg, answers, selectedPlugins)
 			if err := generator.Generate(cmd.Context(), &genCfg, outDir); err != nil {
 				return fmt.Errorf("generate skeleton: %w", err)
 			}
@@ -426,6 +426,7 @@ func buildGeneratorConfig(
 	name, cruxVersion string,
 	fileCfg *infraconfig.Config,
 	answers map[string]prompt.Answer,
+	selectedPlugins []*plugin.Plugin,
 ) generator.Config {
 	cfg := generator.Config{
 		ServiceName: name,
@@ -460,7 +461,21 @@ func buildGeneratorConfig(
 				cfg.Module = m
 			}
 		}
+		// Populate flat answers map for template data.
+		cfg.Answers = make(map[string]any, len(answers))
+		for k, a := range answers {
+			cfg.Answers[k] = a.Value
+		}
 	}
+
+	// Resolve plugin templates for the selected language.
+	for _, p := range selectedPlugins {
+		cfg.Plugins = append(cfg.Plugins, generator.SelectedPlugin{
+			Name:      p.Manifest.Metadata.Name,
+			Templates: p.Manifest.Spec.TemplatesForLang(cfg.Language),
+		})
+	}
+
 	return cfg
 }
 

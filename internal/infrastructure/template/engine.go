@@ -52,7 +52,30 @@ func newFromFS(fsys fs.FS) (domain.Engine, error) {
 	return &engine{tmpl: t}, nil
 }
 
-// Render executes the named template and writes the result to outputPath.
+// AddFromFS parses all .tmpl files from fsys and merges them into the engine.
+func (e *engine) AddFromFS(fsys fs.FS) error {
+	err := fs.WalkDir(fsys, ".", func(path string, d fs.DirEntry, err error) error {
+		if err != nil || d.IsDir() {
+			return err
+		}
+		if !strings.HasSuffix(path, ".tmpl") {
+			return nil
+		}
+		raw, readErr := fs.ReadFile(fsys, path)
+		if readErr != nil {
+			return fmt.Errorf("read template %s: %w", path, readErr)
+		}
+		if _, parseErr := e.tmpl.New(path).Parse(string(raw)); parseErr != nil {
+			return fmt.Errorf("parse template %s: %w", path, parseErr)
+		}
+		return nil
+	})
+	if err != nil {
+		return fmt.Errorf("add templates from fs: %w", err)
+	}
+	return nil
+}
+
 // Shell scripts (.sh) are written with executable permissions (0755).
 func (e *engine) Render(templateName string, data *domain.TemplateData, outputPath string) error {
 	t := e.tmpl.Lookup(templateName)

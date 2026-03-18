@@ -1,0 +1,35 @@
+apiVersion: crux/v1
+kind: Plugin
+metadata:
+  name: crux-plugin-datadog
+  version: 1.0.0
+  description: Datadog APM, metrics, and log forwarding configuration
+  author: Platform Engineering
+  trustTier: 2
+  tags: [observability, datadog, apm, metrics, logs]
+  cruxVersionConstraint: ">=1.0.0"
+spec:
+  questions:
+    - id: dd_service_env
+      type: select
+      prompt: "Primary Datadog environment tag?"
+      help: "The env tag applied to all Datadog telemetry. Must match your Datadog environment configuration. This is the primary environment for APM service maps."
+      options: ["production", "staging", "development"]
+      default: "production"
+    - id: dd_apm_enabled
+      type: confirm
+      prompt: "Enable Datadog APM tracing?"
+      help: "Instruments the service with the Datadog APM tracer. Generates dd-trace-go wiring and sets DD_TRACE_ENABLED=true in the Kubernetes deployment."
+      default: "true"
+    - id: dd_log_injection
+      type: confirm
+      prompt: "Enable trace ID injection into logs?"
+      help: "Injects dd.trace_id and dd.span_id into every log entry, enabling log-to-trace correlation in the Datadog UI."
+      default: "true"
+  templates:
+    - internal/infrastructure/datadog/datadog.go.tmpl
+    - kubernetes/datadog-agent.yaml.tmpl
+  hooks:
+    preGenerate: []
+    postGenerate: []
+  dependencies: []

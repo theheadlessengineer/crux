@@ -24,6 +24,13 @@ spec:
   templates:
     - internal/infrastructure/redis/redis.go.tmpl
     - internal/infrastructure/redis/health.go.tmpl
+  templates_by_language:
+    python:
+      - app/cache/redis.py.tmpl
+    java:
+      - src/main/java/infrastructure/redis/RedisConfig.java.tmpl
+    node:
+      - src/cache/redis.js.tmpl
   hooks:
     preGenerate: []
     postGenerate: []

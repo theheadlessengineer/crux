@@ -1,0 +1,36 @@
+apiVersion: crux/v1
+kind: Plugin
+metadata:
+  name: crux-plugin-rabbitmq
+  version: 1.0.0
+  description: RabbitMQ messaging with producer, consumer, DLQ, and health check
+  author: Platform Engineering
+  trustTier: 2
+  tags: [messaging, rabbitmq, amqp, dlq]
+  cruxVersionConstraint: ">=1.0.0"
+spec:
+  questions:
+    - id: rmq_direction
+      type: select
+      prompt: "RabbitMQ usage direction?"
+      help: "producer generates publisher stubs; consumer generates subscriber stubs; both generates full producer+consumer scaffolding."
+      options: ["producer", "consumer", "both"]
+      default: "both"
+    - id: rmq_exchange_type
+      type: select
+      prompt: "Exchange type?"
+      help: "direct routes messages by exact routing key; topic routes by pattern (e.g. order.*); fanout broadcasts to all bound queues; headers routes by message headers."
+      options: ["direct", "topic", "fanout", "headers"]
+      default: "topic"
+    - id: rmq_dlq
+      type: confirm
+      prompt: "Enable Dead Letter Queue (DLQ)?"
+      help: "Generates a DLQ exchange and queue. Failed messages are routed to the DLQ after the configured retry limit."
+      default: "true"
+  templates:
+    - internal/infrastructure/rabbitmq/rabbitmq.go.tmpl
+    - internal/infrastructure/rabbitmq/health.go.tmpl
+  hooks:
+    preGenerate: []
+    postGenerate: []
+  dependencies: []

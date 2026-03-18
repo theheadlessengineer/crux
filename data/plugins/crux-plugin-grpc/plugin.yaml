@@ -1,0 +1,34 @@
+apiVersion: crux/v1
+kind: Plugin
+metadata:
+  name: crux-plugin-grpc
+  version: 1.0.0
+  description: gRPC server and client stubs with health check, reflection, and graceful shutdown
+  author: Platform Engineering
+  trustTier: 1
+  tags: [grpc, protocol, rpc, protobuf]
+  cruxVersionConstraint: ">=1.0.0"
+spec:
+  questions:
+    - id: grpc_port
+      type: input
+      prompt: "gRPC server port?"
+      help: "The port the gRPC server listens on. 9090 is the standard internal port. Ensure this does not conflict with the HTTP port (default 8080)."
+      default: "9090"
+    - id: grpc_tls
+      type: confirm
+      prompt: "Enable TLS for gRPC connections?"
+      help: "Generates TLS configuration for the gRPC server. Required for production. Uses the same certificate as the HTTP server when SPIFFE is enabled."
+      default: "true"
+    - id: grpc_reflection
+      type: confirm
+      prompt: "Enable gRPC server reflection?"
+      help: "Enables the gRPC reflection API, allowing tools like grpcurl and Postman to discover services without the proto files. Disable in production if service discovery is a concern."
+      default: "true"
+  templates:
+    - internal/infrastructure/grpc/server.go.tmpl
+    - internal/infrastructure/grpc/health.go.tmpl
+  hooks:
+    preGenerate: []
+    postGenerate: []
+  dependencies: []

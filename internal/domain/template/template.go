@@ -1,6 +1,8 @@
 // Package template defines the domain interface and data types for template rendering.
 package template
 
+import "io/fs"
+
 // TemplateData is the variable namespace available inside every template.
 // Field names use lowercase keys to match the dot-notation in .tmpl files
 // (e.g. {{ .service.name }}, {{ .meta.cli_version }}).
@@ -141,4 +143,7 @@ type MetaData struct {
 type Engine interface {
 	// Render renders the named template and writes the result to outputPath.
 	Render(templateName string, data *TemplateData, outputPath string) error
+	// AddFromFS parses additional templates from fsys and merges them into the
+	// engine's template set. Call before Render for any template in fsys.
+	AddFromFS(fsys fs.FS) error
 }

@@ -1,0 +1,34 @@
+apiVersion: crux/v1
+kind: Plugin
+metadata:
+  name: crux-plugin-resilience
+  version: 1.0.0
+  description: Resilience patterns — circuit breaker, bulkhead, timeout hierarchy, retry budget
+  author: Platform Engineering
+  trustTier: 1
+  tags: [resilience, circuit-breaker, bulkhead, retry, timeout]
+  cruxVersionConstraint: ">=1.0.0"
+spec:
+  questions:
+    - id: resilience_profile
+      type: select
+      prompt: "Resilience profile?"
+      help: "standard applies recommended defaults for most services; strict tightens thresholds for critical paths (payments, auth); minimal generates stubs only — configure manually."
+      options: ["standard", "strict", "minimal"]
+      default: "standard"
+    - id: resilience_cb_threshold
+      type: input
+      prompt: "Circuit breaker failure threshold (%)?"
+      help: "The percentage of failed requests that triggers the circuit breaker to open. 50% is the standard default. Lower this for critical services."
+      default: "50"
+    - id: resilience_timeout_http_ms
+      type: input
+      prompt: "Outbound HTTP timeout (ms)?"
+      help: "Maximum time to wait for an outbound HTTP response before aborting. 5000ms is a safe default. Reduce for latency-sensitive paths."
+      default: "5000"
+  templates:
+    - internal/infrastructure/resilience/circuitbreaker.go.tmpl
+  hooks:
+    preGenerate: []
+    postGenerate: []
+  dependencies: []

@@ -1,0 +1,29 @@
+apiVersion: crux/v1
+kind: Plugin
+metadata:
+  name: crux-plugin-spiffe
+  version: 1.0.0
+  description: SPIFFE/SPIRE workload identity — SVID management, OPA policy stub, K8s registration
+  author: Platform Engineering
+  trustTier: 1
+  tags: [security, zero-trust, spiffe, spire, workload-identity]
+  cruxVersionConstraint: ">=1.0.0"
+spec:
+  questions:
+    - id: spiffe_trust_domain
+      type: input
+      prompt: "SPIFFE trust domain?"
+      help: "The trust domain for your SPIFFE IDs (e.g. company.com). All service SVIDs will be issued under spiffe://<trust-domain>/<service-name>."
+      default: "company.com"
+    - id: spiffe_socket_path
+      type: input
+      prompt: "SPIRE agent socket path?"
+      help: "The Unix socket path where the SPIRE agent listens for workload API requests. Default matches the standard SPIRE Kubernetes deployment."
+      default: "/run/spire/sockets/agent.sock"
+  templates:
+    - internal/infrastructure/identity/workload.go.tmpl
+    - identity/policies/service.rego.tmpl
+  hooks:
+    preGenerate: []
+    postGenerate: []
+  dependencies: []

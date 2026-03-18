@@ -336,3 +336,106 @@ func TestGenerate_AllLanguages_SecurityHeadersPresent(t *testing.T) {
 		})
 	}
 }
+
+// ── Plugin rendering tests ────────────────────────────────────────────────────
+
+func TestGenerate_PluginSelected_RendersGoTemplates(t *testing.T) {
+	outDir := t.TempDir()
+	c := generator.Config{
+		ServiceName: "payment-service",
+		Language:    "go",
+		CLIVersion:  "1.0.0",
+		Plugins: []generator.SelectedPlugin{
+			{
+				Name: "crux-plugin-postgresql",
+				Templates: []string{
+					"internal/infrastructure/postgres/postgres.go.tmpl",
+					"internal/infrastructure/postgres/health.go.tmpl",
+				},
+			},
+		},
+	}
+	require.NoError(t, generator.Generate(context.Background(), &c, outDir))
+	assert.FileExists(t, filepath.Join(outDir, "internal/infrastructure/postgres/postgres.go"))
+	assert.FileExists(t, filepath.Join(outDir, "internal/infrastructure/postgres/health.go"))
+}
+
+func TestGenerate_PluginNotSelected_DoesNotRenderPluginFiles(t *testing.T) {
+	outDir := t.TempDir()
+	c := generator.Config{ServiceName: "payment-service", Language: "go", CLIVersion: "1.0.0"}
+	require.NoError(t, generator.Generate(context.Background(), &c, outDir))
+	assert.NoFileExists(t, filepath.Join(outDir, "internal/infrastructure/postgres/postgres.go"))
+}
+
+func TestGenerate_PluginSelected_JavaRendersJavaTemplate(t *testing.T) {
+	outDir := t.TempDir()
+	c := generator.Config{
+		ServiceName: "user-service",
+		Language:    "java",
+		CLIVersion:  "1.0.0",
+		Plugins: []generator.SelectedPlugin{
+			{
+				Name:      "crux-plugin-postgresql",
+				Templates: []string{"src/main/java/infrastructure/postgres/PostgresConfig.java.tmpl"},
+			},
+		},
+	}
+	require.NoError(t, generator.Generate(context.Background(), &c, outDir))
+	assert.FileExists(t, filepath.Join(outDir, "src/main/java/infrastructure/postgres/PostgresConfig.java"))
+}
+
+func TestGenerate_PluginSelected_PythonRendersPythonTemplate(t *testing.T) {
+	outDir := t.TempDir()
+	c := generator.Config{
+		ServiceName: "order-service",
+		Language:    "python",
+		CLIVersion:  "1.0.0",
+		Plugins: []generator.SelectedPlugin{
+			{
+				Name:      "crux-plugin-postgresql",
+				Templates: []string{"app/db/postgres.py.tmpl"},
+			},
+		},
+	}
+	require.NoError(t, generator.Generate(context.Background(), &c, outDir))
+	assert.FileExists(t, filepath.Join(outDir, "app/db/postgres.py"))
+}
+
+func TestGenerate_PluginSelected_NodeRendersNodeTemplate(t *testing.T) {
+	outDir := t.TempDir()
+	c := generator.Config{
+		ServiceName: "notification-service",
+		Language:    "node",
+		CLIVersion:  "1.0.0",
+		Plugins: []generator.SelectedPlugin{
+			{
+				Name:      "crux-plugin-postgresql",
+				Templates: []string{"src/db/postgres.js.tmpl"},
+			},
+		},
+	}
+	require.NoError(t, generator.Generate(context.Background(), &c, outDir))
+	assert.FileExists(t, filepath.Join(outDir, "src/db/postgres.js"))
+}
+
+func TestGenerate_MultiplePlugins_AllRendered(t *testing.T) {
+	outDir := t.TempDir()
+	c := generator.Config{
+		ServiceName: "payment-service",
+		Language:    "go",
+		CLIVersion:  "1.0.0",
+		Plugins: []generator.SelectedPlugin{
+			{
+				Name:      "crux-plugin-postgresql",
+				Templates: []string{"internal/infrastructure/postgres/postgres.go.tmpl"},
+			},
+			{
+				Name:      "crux-plugin-redis",
+				Templates: []string{"internal/infrastructure/redis/redis.go.tmpl"},
+			},
+		},
+	}
+	require.NoError(t, generator.Generate(context.Background(), &c, outDir))
+	assert.FileExists(t, filepath.Join(outDir, "internal/infrastructure/postgres/postgres.go"))
+	assert.FileExists(t, filepath.Join(outDir, "internal/infrastructure/redis/redis.go"))
+}

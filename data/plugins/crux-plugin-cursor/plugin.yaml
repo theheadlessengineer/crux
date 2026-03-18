@@ -1,0 +1,28 @@
+apiVersion: crux/v1
+kind: Plugin
+metadata:
+  name: crux-plugin-cursor
+  version: 1.0.0
+  description: Cursor IDE workspace rules — company standards and service context
+  author: Platform Engineering
+  trustTier: 2
+  tags: [ai, cursor, coding-assistant, developer-experience]
+  cruxVersionConstraint: ">=1.0.0"
+spec:
+  questions:
+    - id: cursor_team_name
+      type: input
+      prompt: "Team name (for Cursor rules context)?"
+      help: "Written into .cursorrules so Cursor understands the team context when suggesting code."
+      default: "Platform Engineering"
+    - id: cursor_no_touch_paths
+      type: input
+      prompt: "Comma-separated paths Cursor must not modify (e.g. infra/terraform)?"
+      help: "Paths added to the Cursor rules no-touch list. Useful for protecting generated IaC, CI pipelines, or compliance-sensitive files."
+      default: "infra/terraform,.github/workflows"
+  templates:
+    - .cursorrules.tmpl
+  hooks:
+    preGenerate: []
+    postGenerate: []
+  dependencies: []

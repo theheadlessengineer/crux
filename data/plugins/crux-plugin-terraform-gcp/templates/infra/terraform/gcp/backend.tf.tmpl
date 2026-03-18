@@ -1,0 +1,6 @@
+terraform {
+  backend "gcs" {
+    bucket = "{{ .gcp_remote_state_bucket }}"
+    prefix = "{{ .service.name }}"
+  }
+}

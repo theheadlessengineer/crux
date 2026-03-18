@@ -1,0 +1,35 @@
+apiVersion: crux/v1
+kind: Plugin
+metadata:
+  name: crux-plugin-mongodb
+  version: 1.0.0
+  description: MongoDB integration with connection pooling, health check, and graceful shutdown
+  author: Platform Engineering
+  trustTier: 1
+  tags: [database, mongodb, nosql]
+  cruxVersionConstraint: ">=1.0.0"
+spec:
+  questions:
+    - id: mongo_database
+      type: input
+      prompt: "Default MongoDB database name?"
+      help: "The primary database name for this service. Used as the default in the generated client. Can be overridden at runtime via MONGO_DATABASE environment variable."
+      default: "{{ .service.name }}"
+    - id: mongo_tls
+      type: confirm
+      prompt: "Enable TLS for MongoDB connections?"
+      help: "Enforces TLS on all connections to MongoDB. Required for Atlas and production deployments."
+      default: "true"
+    - id: mongo_auth_mechanism
+      type: select
+      prompt: "Authentication mechanism?"
+      help: "SCRAM-SHA-256 is the default for MongoDB 4.0+. X.509 uses client certificates for mutual TLS authentication. AWS uses IAM roles for Atlas on AWS."
+      options: ["SCRAM-SHA-256", "X.509", "AWS"]
+      default: "SCRAM-SHA-256"
+  templates:
+    - internal/infrastructure/mongodb/mongodb.go.tmpl
+    - internal/infrastructure/mongodb/health.go.tmpl
+  hooks:
+    preGenerate: []
+    postGenerate: []
+  dependencies: []

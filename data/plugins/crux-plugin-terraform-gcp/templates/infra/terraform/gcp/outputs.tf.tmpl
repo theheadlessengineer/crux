@@ -1,0 +1,9 @@
+output "cloud_sql_connection_name" {
+  description = "Cloud SQL instance connection name"
+  value       = module.cloud_sql.connection_name
+}
+
+output "memorystore_host" {
+  description = "Memorystore Redis host"
+  value       = module.memorystore.host
+}
