@@ -50,11 +50,6 @@ graph TB
     TMPL_I --> PLUGINS
     GEN --> OUTPUT
     LOCK --> LOCKOUT
-
-    style CRUX fill:#1a1a2e,color:#fff,stroke:#4a9eff
-    style DATA fill:#16213e,color:#fff,stroke:#a78bfa
-    style OUTPUT fill:#1a3a2e,color:#fff,stroke:#22c55e
-    style ENGINEER fill:#2a1a1a,color:#fff,stroke:#f87171
 ```
 
 ---
@@ -64,7 +59,7 @@ graph TB
 > How the crux codebase itself is structured internally.
 
 ```mermaid
-graph LR
+graph TB
     subgraph DOMAIN["Domain Layer (no external deps)"]
         DH["domain/health\nRegistry"]
         DM["domain/model\nValidateServiceName"]
@@ -95,10 +90,6 @@ graph LR
     PRES -->|uses interfaces| DOMAIN
     INFRA -->|implements interfaces| DOMAIN
     PRES -->|calls| INFRA
-
-    style DOMAIN fill:#0f3460,color:#fff,stroke:#4a9eff
-    style INFRA fill:#16213e,color:#fff,stroke:#a78bfa
-    style PRES fill:#1a3a2e,color:#fff,stroke:#22c55e
 ```
 
 ---
@@ -206,12 +197,6 @@ graph TB
     MANIFEST --> SPEC
     SPEC -->|"TemplatesForLang(language)"| SEL
     SEL --> RENDER
-
-    style EMBED fill:#1a1a2e,color:#fff,stroke:#4a9eff
-    style USER fill:#16213e,color:#fff,stroke:#a78bfa
-    style LOADER fill:#0f3460,color:#fff,stroke:#4a9eff
-    style DOMAIN fill:#1a3a2e,color:#fff,stroke:#22c55e
-    style GEN fill:#3a1a2e,color:#fff,stroke:#f87171
 ```
 
 ---
@@ -245,11 +230,6 @@ graph TD
     T1 --> I1
     T2 --> I1
     T3 --> I2
-
-    style T1 fill:#1a3a2e,color:#fff,stroke:#22c55e
-    style T2 fill:#1a2a3e,color:#fff,stroke:#4a9eff
-    style T3 fill:#3a1a1a,color:#fff,stroke:#f87171
-    style INSTALL fill:#2a2a2e,color:#fff,stroke:#a78bfa
 ```
 
 ---
@@ -290,12 +270,6 @@ flowchart TD
     PG_V --> PG_M_JV
     PG_V --> PG_M_ND
 
-    style L fill:#4a9eff,color:#fff
-    style PL fill:#a78bfa,color:#fff
-    style PG_M_GO fill:#22c55e,color:#fff
-    style PG_M_PY fill:#22c55e,color:#fff
-    style PG_M_JV fill:#22c55e,color:#fff
-    style PG_M_ND fill:#22c55e,color:#fff
 ```
 
 ---
@@ -371,10 +345,6 @@ flowchart TD
     TBL -->|found| EJV
     TBL -->|found| END
     TBL -->|not found| TFB
-
-    style CORE fill:#1a1a2e,color:#fff,stroke:#4a9eff
-    style PLUGIN_RES fill:#16213e,color:#fff,stroke:#a78bfa
-    style EXAMPLES fill:#1a3a2e,color:#fff,stroke:#22c55e
 ```
 
 ---
@@ -645,11 +615,6 @@ graph BT
     ROUTER --> ERR
 
     HEALTH_H --> HEALTH_R
-
-    style CMD fill:#4a9eff,color:#fff
-    style DOMAIN_SVC fill:#0f3460,color:#fff,stroke:#4a9eff
-    style INFRA_SVC fill:#16213e,color:#fff,stroke:#a78bfa
-    style PRES_SVC fill:#1a3a2e,color:#fff,stroke:#22c55e
 ```
 
 ---
